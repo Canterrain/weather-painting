@@ -236,6 +236,12 @@ static void open_settings(bool setup_mode) {
   if (how == PORTAL_DEMO) {
     g_demo = 0;
     run_demo(true);
+  } else {
+    // the settings screen would stay up through the download and drawing,
+    // so say something has happened
+    show_screen("Closing settings",
+                setup_mode ? "Downloading the painting. The first time takes a few minutes."
+                           : "The painting will be back in a minute or two.");
   }
   g_demo = -1;
   ESP.restart();   // a fresh start with the new settings draws the painting
