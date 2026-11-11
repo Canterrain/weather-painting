@@ -1,0 +1,11 @@
+name: Snowing harder — half covered
+phase: day
+temp_c: -3
+cloud_cover: 100
+condition: snow
+is_snowing: true
+snowfall_cm_h: 1.5
+snow_depth_cm: 6
+roof_snow_cm: 4
+season: winter
+month: 1

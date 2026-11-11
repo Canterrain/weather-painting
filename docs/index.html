@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Install Weather Painting on your reTerminal E1004 over USB, then connect it to Wi-Fi and choose your city.">
+  <meta name="theme-color" content="#f6f1e7">
+  <title>Set Up Your Weather Painting</title>
+  <link rel="stylesheet" href="installer.css">
+  <script type="module" src="installer.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Weather Painting</p>
+      <h1>Set up your painting.</h1>
+      <p class="intro">Install the software over USB, connect to Wi-Fi, and choose your city. The painting changes with your weather from then on.</p>
+    </header>
+
+    <section class="card install-card" aria-labelledby="install-title">
+      <div class="step-heading"><span class="step" aria-hidden="true">1</span><h2 id="install-title">Connect and install</h2></div>
+      <p>For the <strong>Seeed Studio reTerminal E1004</strong>. Put a microSD card in the frame first; the painting is stored on it. Have a USB-C data cable and a desktop or laptop ready.</p>
+      <ol>
+        <li>Plug the frame into your computer. Close Arduino IDE's serial monitor or any other app using its USB connection.</li>
+        <li>Click <strong>Connect</strong>, choose your frame, then select <strong>Install</strong>.</li>
+        <li>For a first installation, select <strong>Erase device</strong>. Leave the frame connected until installation finishes and it restarts.</li>
+      </ol>
+      <div class="install-action">
+        <p id="installer-status" role="status">Loading the installer…</p>
+        <esp-web-install-button id="install-button" manifest="firmware/manifest.json" hidden>
+          <button slot="activate" type="button">Connect</button>
+          <span slot="unsupported">This browser cannot connect over USB. Open this page in Chrome, Edge, or a Firefox version with Web Serial support on a computer.</span>
+          <span slot="not-allowed">Open the secure HTTPS version of this page to connect your frame.</span>
+        </esp-web-install-button>
+        <p id="version" class="small" hidden></p>
+      </div>
+      <noscript><p class="notice">JavaScript is needed for the USB installer. Enable it and reload this page.</p></noscript>
+      <p class="small">Chrome and Edge are good choices. Firefox needs Web Serial support. Safari, iPhone, iPad, and Android aren't supported by this installer.</p>
+      <details>
+        <summary>Updating an existing frame?</summary>
+        <p>You usually don't need to. The frame checks for updates once a day and installs them over Wi-Fi, and its settings page has a <strong>Check for an update</strong> button.</p>
+        <p>If you do use this page, leave <strong>Erase device</strong> unchecked to keep your Wi-Fi, city, and painting choice. Erasing removes them, and you'll need to complete setup again. Layers you uploaded stay on the memory card either way.</p>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="wifi-title">
+      <div class="step-heading"><span class="step" aria-hidden="true">2</span><h2 id="wifi-title">Connect it to your Wi-Fi</h2></div>
+      <p>After installation, the frame shows setup instructions on its screen. On your phone or computer:</p>
+      <ol>
+        <li>Open your phone or computer's <strong>Wi-Fi settings</strong> and join <strong>WeatherPainting-Setup</strong>. The password is <code>watercolor</code>. Stay connected even if your device says there is no internet.</li>
+        <li>The setup page usually opens by itself. If it doesn't, open <a href="http://192.168.4.1" target="_blank" rel="noopener">http://192.168.4.1</a>.</li>
+        <li>Choose your home Wi-Fi and enter its password.</li>
+        <li>Enter your city, then state or region, then country, for example <code>Cincinnati, OH, US</code>.</li>
+        <li>Press <strong>Close settings</strong>. The frame downloads the painting and draws it for your weather. The first download takes a few minutes.</li>
+      </ol>
+      <p class="small">An updated frame with working saved Wi-Fi reconnects on its own. USB installation ends before Wi-Fi setup; you don't need the installer's optional console to continue.</p>
+    </section>
+
+    <section class="card" aria-labelledby="use-title">
+      <div class="step-heading"><span class="step" aria-hidden="true">3</span><h2 id="use-title">Hang it and leave it</h2></div>
+      <p>Hang the frame in landscape with its buttons on the right. It wakes every 30 minutes, every 15 while it's raining or snowing, and redraws only when the painting has changed.</p>
+      <ol>
+        <li><strong>Top button:</strong> redraw now. In the demo, back to the real weather.</li>
+        <li><strong>Middle button:</strong> show every season and kind of weather in turn. Press it again to skip ahead to the next season.</li>
+        <li><strong>Bottom button:</strong> open settings. The screen shows the address, usually <a href="http://weatherpainting.local" target="_blank" rel="noopener">http://weatherpainting.local</a>.</li>
+      </ol>
+      <p>In settings you can change Wi-Fi or your city, upload a painting of your own, and check for updates.</p>
+    </section>
+
+    <section class="help" aria-labelledby="help-title">
+      <h2 id="help-title">Something not working?</h2>
+      <details><summary>The frame isn't in the USB list</summary><p>Try another data cable or USB port. Close apps using the frame's serial port. If the computer still can't see it, install the CH340 USB-to-serial driver from the chip maker, WCH.</p></details>
+      <details><summary>The installer can't connect to the frame</summary><p>Unplug and reconnect it, then try again. This firmware is only for the reTerminal E1004; other reTerminal E models use different screens.</p></details>
+      <details><summary>The screen says "No memory card"</summary><p>Turn the frame off, insert a microSD card formatted as FAT32, and turn it back on. Any size works; the painting needs about 40 MB.</p></details>
+      <details><summary>I can't find the setup Wi-Fi network</summary><p>Allow the frame to restart. If you updated without erasing, it may already be on your saved home network. Press the bottom button to open settings from there.</p></details>
+      <details><summary>weatherpainting.local doesn't open</summary><p>Make sure you're on the same home network. Use the address shown on the frame's screen, or the frame's IP address from your router's connected-device list.</p></details>
+      <details><summary>The painting is upside down</summary><p>Turn the frame around so its buttons are on the right.</p></details>
+    </section>
+
+    <footer>
+      <p><a href="https://github.com/Canterrain/weather-painting">Project, painting guide, and source code</a></p>
+      <p>Made by <a href="https://anoraker.com">Josh Hendrickson</a> · Painting by Julia Hendrickson · Installer powered by <a href="https://esphome.github.io/esp-web-tools/">ESP Web Tools</a></p>
+    </footer>
+  </main>
+</body>
+</html>

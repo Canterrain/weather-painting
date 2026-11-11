@@ -1,0 +1,9 @@
+name: Rainy afternoon, puddles
+phase: day
+temp_c: 11
+cloud_cover: 100
+condition: rain
+is_raining: true
+rain_mm_h: 4
+puddle_mm: 10
+ground_wet: true

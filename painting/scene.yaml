@@ -1,0 +1,121 @@
+# Julia Hendrickson's tree, and the standard layout for every painting.
+#
+# These layer names are the ones the frame's settings page expects when you
+# upload your own painting (guides/painting.md). Bottom to top: sky, sun,
+# ground and tree (one of each per season), snow on the branches, falling
+# snow, rain, night, moon. Every layer except sky_clear and ground_summer is
+# optional: a missing file is skipped, so a painting works from day one and
+# gains detail as layers are added.
+#
+# The paintings in layers/ are © Julia Hendrickson, CC BY-NC-ND 4.0 (LICENSE).
+
+canvas: [1600, 1200]
+background: [255, 255, 255]
+steps: 10
+
+layers:
+  # ---------------- sky ----------------
+  - id: sky_clear
+    file: layers/sky_clear.png
+  - id: sky_cloudy
+    file: layers/sky_cloudy.png
+    when: "cloud_cover >= 50 and cloud_cover < 85 and not is_raining and not is_snowing"
+    optional: true
+  - id: sky_stormy
+    file: layers/sky_stormy.png
+    when: "cloud_cover >= 85 or is_raining or is_snowing or is_stormy"
+    optional: true
+  - id: sun
+    file: layers/sun.png
+    when: "is_day and cloud_cover < 50"
+    optional: true
+
+  # ---------------- ground (one per season) ----------------
+  # The snowy ground shows whenever snow is lying, in any season. A winter
+  # without snow uses the fall ground.
+  - id: ground_spring
+    file: layers/ground_spring.png
+    when: "season == 'spring' and snow_depth_cm < 1"
+    optional: true
+  - id: ground_summer
+    file: layers/ground_summer.png
+    when: "season == 'summer' and snow_depth_cm < 1"
+  - id: ground_fall
+    file: layers/ground_fall.png
+    when: "season in ['autumn', 'winter'] and snow_depth_cm < 1"
+    optional: true
+  - id: ground_winter
+    file: layers/ground_winter.png
+    when: "snow_depth_cm >= 1"
+    optional: true
+
+  # ---------------- tree (one per season) ----------------
+  - id: tree_spring
+    file: layers/tree_spring.png
+    when: "season == 'spring'"
+    optional: true
+  - id: tree_summer
+    file: layers/tree_summer.png
+    when: "season == 'summer'"
+    optional: true
+  - id: tree_fall
+    file: layers/tree_fall.png
+    when: "season == 'autumn'"
+    optional: true
+  - id: tree_winter
+    file: layers/tree_winter.png
+    when: "season == 'winter'"
+    optional: true
+
+  # ---------------- snow resting on the branches ----------------
+  # Stays after the snow stops, until it warms up.
+  - id: snow_branches
+    file: layers/snow_branches.png
+    when: "season == 'winter' and temp_c <= 1 and (snow_depth_cm >= 2 or snowfall_cm_h >= 0.8)"
+    optional: true
+
+  # ---------------- falling snow ----------------
+  - id: snowfall
+    amount: "max(ramp(snowfall_cm_h, 0, 3), 0.1)"
+    when: "is_snowing"
+    optional: true
+    stages:
+      - {at: 0.0, file: layers/snowfall_light.png}
+      - {at: 0.4, file: layers/snowfall_heavy.png}
+      - {at: 0.8, file: layers/snowfall_blizzard.png}
+
+  # ---------------- rain, with its puddles ----------------
+  # Heavy rain from 3 mm an hour.
+  - id: rain
+    amount: "ramp(rain_mm_h, 0, 6)"
+    when: "is_raining"
+    optional: true
+    stages:
+      - {at: 0.0, file: layers/rain_light.png}
+      - {at: 0.5, file: layers/rain_heavy.png}
+
+  # ---------------- night, then the moon on top so it glows ----------------
+  - id: night
+    file: layers/night.png
+    when: "is_night"
+    optional: true
+  # One painted full moon, shaded to the real phase every night. The growth
+  # maps (python -m painter.moon layers/moon.png, or made for you by the
+  # settings page) light exactly moon_illum of the disc, from the right while
+  # waxing and the left while waning.
+  - id: moon_waxing
+    file: layers/moon.png
+    reveal: layers/moon_waxing_growth.png
+    amount: "moon_illum"
+    feather: 0.03
+    steps: 50
+    when: "is_night and moon_up and cloud_cover < 70 and moon_waxing and moon_illum >= 0.02"
+    optional: true
+  - id: moon_waning
+    file: layers/moon.png
+    reveal: layers/moon_waning_growth.png
+    amount: "moon_illum"
+    feather: 0.03
+    steps: 50
+    when: "is_night and moon_up and cloud_cover < 70 and not moon_waxing and moon_illum >= 0.02"
+    optional: true

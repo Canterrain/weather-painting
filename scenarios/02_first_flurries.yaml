@@ -1,0 +1,11 @@
+name: First flurries — a dusting
+phase: day
+temp_c: -1
+cloud_cover: 95
+condition: snow
+is_snowing: true
+snowfall_cm_h: 0.3
+snow_depth_cm: 1.5
+roof_snow_cm: 1.0
+season: winter
+month: 1

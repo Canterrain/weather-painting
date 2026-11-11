@@ -1,0 +1,10 @@
+name: Foggy morning, frozen puddles
+phase: dawn
+temp_c: -3
+cloud_cover: 90
+condition: fog
+is_foggy: true
+puddle_mm: 6
+puddles_frozen: true
+season: autumn
+month: 11

@@ -1,0 +1,11 @@
+.arduino/
+.venv/
+out/
+__pycache__/
+*.pyc
+painter/native/build/
+firmware/painting_frame/config.h
+.DS_Store
+._*
+*.swp
+*~

@@ -1,0 +1,18 @@
+# Settings for the painter tools on your computer (python -m painter ...).
+# The frame itself is set up from its settings page; nothing here reaches it.
+
+# Where `render` and `state` get the live weather from.
+location:
+  name: "Cincinnati,OH,US"   # city, state/region, country; looked up with Open-Meteo
+  # lat: 39.1031             # or give coordinates directly (skips the lookup)
+  # lon: -84.5120
+
+scene: painting    # folder containing scene.yaml and your layers
+
+display:
+  rotate: 90            # the panel is portrait (1200x1600); paintings are landscape (1600x1200).
+                        # 90 = frame hung with its front buttons on the RIGHT
+  palette: perceived    # perceived (what the inks really look like) | nominal
+  saturation: 1.15      # small boosts help against the panel's muted inks
+  contrast: 1.05
+  brightness: 1.0

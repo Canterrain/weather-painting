@@ -1,0 +1,6 @@
+name: Clear dusk with a crescent moon
+phase: dusk
+cloud_cover: 20
+moon_up: true
+moon_phase: waxing_crescent
+moon_illum: 0.2

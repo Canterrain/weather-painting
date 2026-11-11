@@ -1,0 +1,9 @@
+name: Winter night, crescent moon, no snow
+season: winter
+month: 12
+phase: night
+temp_c: -4
+cloud_cover: 10
+moon_up: true
+moon_phase: waxing_crescent
+moon_illum: 0.25

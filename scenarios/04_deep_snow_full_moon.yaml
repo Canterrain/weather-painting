@@ -1,0 +1,11 @@
+name: Deep snow under a full moon
+phase: night
+temp_c: -8
+cloud_cover: 5
+snow_depth_cm: 25
+roof_snow_cm: 10
+moon_up: true
+moon_phase: full
+moon_illum: 1.0
+season: winter
+month: 1

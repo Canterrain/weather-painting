@@ -1,0 +1,8 @@
+name: Thunderstorm at night
+phase: night
+cloud_cover: 100
+condition: thunderstorm
+is_raining: true
+is_stormy: true
+rain_mm_h: 8
+puddle_mm: 14

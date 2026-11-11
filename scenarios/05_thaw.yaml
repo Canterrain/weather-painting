@@ -1,0 +1,9 @@
+name: Thaw — roof clear, snow patchy, puddles forming
+phase: day
+temp_c: 6
+cloud_cover: 60
+snow_depth_cm: 2
+roof_snow_cm: 0
+puddle_mm: 3
+season: spring
+month: 3

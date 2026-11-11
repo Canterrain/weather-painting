@@ -1,0 +1,10 @@
+name: Autumn rain
+season: autumn
+month: 10
+phase: day
+temp_c: 10
+cloud_cover: 100
+condition: rain
+is_raining: true
+rain_mm_h: 2
+puddle_mm: 6

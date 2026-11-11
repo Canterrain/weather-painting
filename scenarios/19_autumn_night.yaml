@@ -1,0 +1,9 @@
+name: Autumn night, crescent moon
+season: autumn
+month: 10
+phase: night
+temp_c: 6
+cloud_cover: 20
+moon_up: true
+moon_phase: waxing_crescent
+moon_illum: 0.2

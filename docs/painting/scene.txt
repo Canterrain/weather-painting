@@ -1,0 +1,116 @@
+WPS1
+canvas 1200 1600
+background 255 255 255
+inks 222 222 212 28 30 36 165 36 30 222 204 30 52 88 172 50 108 66
+tone 294 269 256 1
+layer sky_clear 0 10 3932 0
+file sky_clear.wpl
+when n:1
+amount n:1.0
+opacity n:1.0
+end
+layer sky_cloudy 0 10 3932 0
+file sky_cloudy.wpl
+when v:cloud_cover n:50.0 o:>= v:cloud_cover n:85.0 o:< o:and v:is_raining o:not o:and v:is_snowing o:not o:and
+amount n:1.0
+opacity n:1.0
+end
+layer sky_stormy 0 10 3932 0
+file sky_stormy.wpl
+when v:cloud_cover n:85.0 o:>= v:is_raining o:or v:is_snowing o:or v:is_stormy o:or
+amount n:1.0
+opacity n:1.0
+end
+layer sun 0 10 3932 0
+file sun.wpl
+when v:is_day v:cloud_cover n:50.0 o:< o:and
+amount n:1.0
+opacity n:1.0
+end
+layer ground_spring 0 10 3932 0
+file ground_spring.wpl
+when v:season s:spring o:== v:snow_depth_cm n:1.0 o:< o:and
+amount n:1.0
+opacity n:1.0
+end
+layer ground_summer 0 10 3932 0
+file ground_summer.wpl
+when v:season s:summer o:== v:snow_depth_cm n:1.0 o:< o:and
+amount n:1.0
+opacity n:1.0
+end
+layer ground_fall 0 10 3932 0
+file ground_fall.wpl
+when v:season s:autumn o:== v:season s:winter o:== o:or v:snow_depth_cm n:1.0 o:< o:and
+amount n:1.0
+opacity n:1.0
+end
+layer ground_winter 0 10 3932 0
+file ground_winter.wpl
+when v:snow_depth_cm n:1.0 o:>=
+amount n:1.0
+opacity n:1.0
+end
+layer tree_spring 0 10 3932 0
+file tree_spring.wpl
+when v:season s:spring o:==
+amount n:1.0
+opacity n:1.0
+end
+layer tree_summer 0 10 3932 0
+file tree_summer.wpl
+when v:season s:summer o:==
+amount n:1.0
+opacity n:1.0
+end
+layer tree_fall 0 10 3932 0
+file tree_fall.wpl
+when v:season s:autumn o:==
+amount n:1.0
+opacity n:1.0
+end
+layer tree_winter 0 10 3932 0
+file tree_winter.wpl
+when v:season s:winter o:==
+amount n:1.0
+opacity n:1.0
+end
+layer snow_branches 0 10 3932 0
+file snow_branches.wpl
+when v:season s:winter o:== v:temp_c n:1.0 o:<= o:and v:snow_depth_cm n:2.0 o:>= v:snowfall_cm_h n:0.8 o:>= o:or o:and
+amount n:1.0
+opacity n:1.0
+end
+layer snowfall 0 10 3932 0
+stage 0.0 snowfall_light.wpl
+stage 0.4 snowfall_heavy.wpl
+stage 0.8 snowfall_blizzard.wpl
+when v:is_snowing
+amount v:snowfall_cm_h n:0.0 n:3.0 f:ramp:3 n:0.1 f:max:2
+opacity n:1.0
+end
+layer rain 0 10 3932 0
+stage 0.0 rain_light.wpl
+stage 0.5 rain_heavy.wpl
+when v:is_raining
+amount v:rain_mm_h n:0.0 n:6.0 f:ramp:3
+opacity n:1.0
+end
+layer night 0 10 3932 0
+file night.wpl
+when v:is_night
+amount n:1.0
+opacity n:1.0
+end
+layer moon_waxing 0 50 1966 1
+file moon__moon_waxing_growth.wpl
+when v:is_night v:moon_up o:and v:cloud_cover n:70.0 o:< o:and v:moon_waxing o:and v:moon_illum n:0.02 o:>= o:and
+amount v:moon_illum
+opacity n:1.0
+end
+layer moon_waning 0 50 1966 1
+file moon__moon_waning_growth.wpl
+when v:is_night v:moon_up o:and v:cloud_cover n:70.0 o:< o:and v:moon_waxing o:not o:and v:moon_illum n:0.02 o:>= o:and
+amount v:moon_illum
+opacity n:1.0
+end

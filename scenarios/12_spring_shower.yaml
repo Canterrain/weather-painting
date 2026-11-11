@@ -1,0 +1,10 @@
+name: Spring shower
+season: spring
+month: 4
+phase: day
+temp_c: 13
+cloud_cover: 90
+condition: rain
+is_raining: true
+rain_mm_h: 1.5
+puddle_mm: 5

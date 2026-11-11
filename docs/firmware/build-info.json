@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "builtAt": "2026-11-11T01:44:43+00:00",
+  "fqbn": "esp32:esp32:XIAO_ESP32S3:PSRAM=opi",
+  "sourceSha256": "fdb5e05703a935ddd2174e74ca320b1028ce7d9e1dfd6563c6a8d4a9ca666530",
+  "sourceFiles": [
+    "astro.cpp",
+    "astro.h",
+    "config.example.h",
+    "demo.cpp",
+    "demo.h",
+    "driver.h",
+    "generated.h",
+    "ota.cpp",
+    "ota.h",
+    "painting_frame.ino",
+    "portal.cpp",
+    "portal.h",
+    "render.cpp",
+    "render.h",
+    "rules.cpp",
+    "rules.h",
+    "screens.cpp",
+    "screens.h",
+    "settings.cpp",
+    "settings.h",
+    "settings_page.h",
+    "state.h",
+    "sync.cpp",
+    "sync.h",
+    "text.cpp",
+    "text.h",
+    "version.h",
+    "weather.cpp",
+    "weather.h",
+    "wp_compose.c",
+    "wp_compose.h"
+  ],
+  "parts": [
+    {
+      "path": "bootloader.bin",
+      "offset": 0,
+      "bytes": 19984,
+      "sha256": "3a06e81d78e928687d7acd8abcd069543a4413de4398e2e2940a97b3fc739fd8"
+    },
+    {
+      "path": "partitions.bin",
+      "offset": 32768,
+      "bytes": 3072,
+      "sha256": "1d9cca96de0fe07ad7fc0648b9878ddecd9ce565e38b589ad20fea698ed4c80c"
+    },
+    {
+      "path": "boot_app0.bin",
+      "offset": 57344,
+      "bytes": 8192,
+      "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+    },
+    {
+      "path": "firmware.bin",
+      "offset": 65536,
+      "bytes": 1390096,
+      "sha256": "9d7eec5b7c9a0a136d44b20fd333845ee46496c6a02f57525c0b72cce3318059"
+    }
+  ]
+}
