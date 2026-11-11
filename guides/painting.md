@@ -30,7 +30,7 @@ The frame lays the pieces down from bottom to top. Only **sky_clear** and **grou
 | File | What to paint | When it shows |
 | --- | --- | --- |
 | `sky_clear.png` | A clear day sky, painted all the way down to the bottom edge, behind the ground and tree. No see-through areas. | Always, at the bottom of the stack |
-| `sky_cloudy.png` | A partly cloudy sky, also painted all the way down. | Clouds cover half to most of the sky |
+| `sky_cloudy.png` | A partly cloudy sky, also painted all the way down. | Clouds cover half to most of the sky, and fog |
 | `sky_stormy.png` | A heavy, gray sky. | Overcast, raining, snowing, or storms |
 | `sun.png` | The sun, alone, where it sits in the sky. | Daytime with mostly clear skies |
 
@@ -42,18 +42,19 @@ Keep the ground's horizon and the trunk in the same place in every season. Only 
 | --- | --- | --- |
 | `ground_spring.png` | Fresh green ground. | Spring |
 | `ground_summer.png` | Summer ground. | Summer |
-| `ground_fall.png` | Golden, dormant ground. | Fall, and winters without snow |
-| `ground_winter.png` | Ground under snow. | Whenever snow is lying, in any season |
+| `ground_fall.png` | Golden, dormant ground. | Fall |
+| `ground_winter.png` | Winter ground, under snow. | Winter, and whenever snow is lying in any other season |
 | `tree_spring.png` | The tree in spring. | Spring |
 | `tree_summer.png` | The tree in full leaf. | Summer |
 | `tree_fall.png` | The tree in fall color. | Fall |
 | `tree_winter.png` | The bare tree. | Winter |
 | `snow_branches.png` | Snow resting along the branches of the winter tree. | Winter, after real snow, until it warms up |
 
-### Falling Weather
+### Fog and Falling Weather
 
 | File | What to paint | When it shows |
 | --- | --- | --- |
+| `fog.png` | A pale, soft mist over the ground and the bottom of the tree, fading out higher up. | Fog |
 | `snowfall_light.png` | A few falling flakes across the picture. | Light snow |
 | `snowfall_heavy.png` | More flakes. | Steady snow |
 | `snowfall_blizzard.png` | Lots of flakes. | Heavy snow |

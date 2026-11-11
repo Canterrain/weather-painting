@@ -5,6 +5,7 @@
 #include <Update.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <algorithm>
 #include <vector>
 #include "generated.h"
 #include "ota.h"
@@ -166,26 +167,45 @@ static void handle_options() {
   ok();
 }
 
-// multipart upload of one converted layer (.wpl) into /mine/layers
+// one converted layer (.wpl) into /mine/layers, sent as the raw request body
+// with its name in X-Name. The library reads a raw body in big blocks; a
+// multipart form goes through it a byte at a time and runs at a few KB/s.
+static uint8_t g_buf[16384];
+static size_t g_buf_used = 0;
+
+static void flush_upload() {
+  if (g_upload && g_buf_used && g_upload.write(g_buf, g_buf_used) != g_buf_used) {
+    g_upload_error = "The SD card is full or failing.";
+    g_upload.close();
+  }
+  g_buf_used = 0;
+}
+
 static void handle_upload_data() {
-  HTTPUpload &up = srv->upload();
-  if (up.status == UPLOAD_FILE_START) {
+  HTTPRaw &up = srv->raw();
+  if (up.status == RAW_START) {
     g_upload_error = "";
-    g_upload_name = up.filename;
+    g_buf_used = 0;
+    g_upload_name = srv->header("X-Name");
     if (!safe_name(g_upload_name)) { g_upload_error = "Bad file name."; return; }
     if (!SD.exists("/mine")) SD.mkdir("/mine");
     if (!SD.exists("/mine/layers")) SD.mkdir("/mine/layers");
     g_upload = SD.open("/mine/layers/" + g_upload_name + ".part", FILE_WRITE);
     if (!g_upload) g_upload_error = "Couldn't write to the SD card.";
-  } else if (up.status == UPLOAD_FILE_WRITE) {
-    if (g_upload && g_upload.write(up.buf, up.currentSize) != up.currentSize) {
-      g_upload_error = "The SD card is full or failing.";
-      g_upload.close();
+  } else if (up.status == RAW_WRITE) {
+    // gather the network's small blocks into big SD card writes
+    for (size_t off = 0; off < up.currentSize && g_upload;) {
+      size_t n = std::min(up.currentSize - off, sizeof g_buf - g_buf_used);
+      memcpy(g_buf + g_buf_used, up.buf + off, n);
+      g_buf_used += n;
+      off += n;
+      if (g_buf_used == sizeof g_buf) flush_upload();
     }
-  } else if (up.status == UPLOAD_FILE_END || up.status == UPLOAD_FILE_ABORTED) {
+  } else if (up.status == RAW_END || up.status == RAW_ABORTED) {
+    flush_upload();
     if (g_upload) g_upload.close();
     String part = "/mine/layers/" + g_upload_name + ".part", dest = "/mine/layers/" + g_upload_name;
-    if (up.status == UPLOAD_FILE_ABORTED) g_upload_error = "The upload was interrupted.";
+    if (up.status == RAW_ABORTED) g_upload_error = "The upload was interrupted.";
     if (g_upload_error.length()) { SD.remove(part); return; }
     SD.remove(dest);
     if (!SD.rename(part, dest)) g_upload_error = "Couldn't save the file.";
@@ -231,22 +251,22 @@ static void handle_install_update() {
   ESP.restart();
 }
 
-// a firmware .bin uploaded from the computer
+// a firmware .bin uploaded from the computer, as the raw request body
 static void handle_firmware_data() {
-  HTTPUpload &up = srv->upload();
-  if (up.status == UPLOAD_FILE_START) {
+  HTTPRaw &up = srv->raw();
+  if (up.status == RAW_START) {
     g_upload_error = "";
     g_update_ok = false;
     if (!Update.begin(UPDATE_SIZE_UNKNOWN)) g_upload_error = Update.errorString();
-  } else if (up.status == UPLOAD_FILE_WRITE) {
+  } else if (up.status == RAW_WRITE) {
     if (!g_upload_error.length() && Update.write(up.buf, up.currentSize) != up.currentSize)
       g_upload_error = Update.errorString();
-  } else if (up.status == UPLOAD_FILE_END) {
+  } else if (up.status == RAW_END) {
     if (!g_upload_error.length()) {
       if (Update.end(true)) g_update_ok = true;
       else g_upload_error = Update.errorString();
     }
-  } else if (up.status == UPLOAD_FILE_ABORTED) {
+  } else if (up.status == RAW_ABORTED) {
     Update.abort();
     g_upload_error = "The upload was interrupted.";
   }
@@ -292,6 +312,8 @@ PortalExit run_portal(Settings &settings, bool setup_mode,
 
   WebServer server(80);
   srv = &server;
+  const char *headers[] = {"X-Name"};
+  server.collectHeaders(headers, 1);
   server.on("/", HTTP_GET, [] { g_last_request = millis(); srv->send_P(200, "text/html; charset=utf-8", SETTINGS_PAGE); });
   server.on("/api/state", HTTP_GET, touch(handle_state));
   server.on("/api/scan", HTTP_GET, touch(handle_scan));

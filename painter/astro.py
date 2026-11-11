@@ -1,7 +1,7 @@
 """Compact sun and moon positions (low-precision almanac formulas).
 
 Accurate to a few tenths of a degree, which is plenty for "is the moon up?"
-and "is it dusk?". Kept deliberately simple so firmware/weather_painting/astro.cpp
+and "is it dusk?". Kept deliberately simple so firmware/painting_frame/astro.cpp
 can mirror it line for line.
 """
 

@@ -2,10 +2,10 @@
 #
 # These layer names are the ones the frame's settings page expects when you
 # upload your own painting (guides/painting.md). Bottom to top: sky, sun,
-# ground and tree (one of each per season), snow on the branches, falling
-# snow, rain, night, moon. Every layer except sky_clear and ground_summer is
-# optional: a missing file is skipped, so a painting works from day one and
-# gains detail as layers are added.
+# ground and tree (one of each per season), snow on the branches, fog,
+# falling snow, rain, night, moon. Every layer except sky_clear and
+# ground_summer is optional: a missing file is skipped, so a painting works
+# from day one and gains detail as layers are added.
 #
 # The paintings in layers/ are © Julia Hendrickson, CC BY-NC-ND 4.0 (LICENSE).
 
@@ -19,11 +19,11 @@ layers:
     file: layers/sky_clear.png
   - id: sky_cloudy
     file: layers/sky_cloudy.png
-    when: "cloud_cover >= 50 and cloud_cover < 85 and not is_raining and not is_snowing"
+    when: "(cloud_cover >= 50 and cloud_cover < 85 or is_foggy) and not is_raining and not is_snowing"
     optional: true
   - id: sky_stormy
     file: layers/sky_stormy.png
-    when: "cloud_cover >= 85 or is_raining or is_snowing or is_stormy"
+    when: "cloud_cover >= 85 and not is_foggy or is_raining or is_snowing or is_stormy"
     optional: true
   - id: sun
     file: layers/sun.png
@@ -31,8 +31,8 @@ layers:
     optional: true
 
   # ---------------- ground (one per season) ----------------
-  # The snowy ground shows whenever snow is lying, in any season. A winter
-  # without snow uses the fall ground.
+  # The winter ground shows all winter, and whenever snow is lying in any
+  # other season.
   - id: ground_spring
     file: layers/ground_spring.png
     when: "season == 'spring' and snow_depth_cm < 1"
@@ -42,11 +42,11 @@ layers:
     when: "season == 'summer' and snow_depth_cm < 1"
   - id: ground_fall
     file: layers/ground_fall.png
-    when: "season in ['autumn', 'winter'] and snow_depth_cm < 1"
+    when: "season == 'autumn' and snow_depth_cm < 1"
     optional: true
   - id: ground_winter
     file: layers/ground_winter.png
-    when: "snow_depth_cm >= 1"
+    when: "season == 'winter' or snow_depth_cm >= 1"
     optional: true
 
   # ---------------- tree (one per season) ----------------
@@ -72,6 +72,12 @@ layers:
   - id: snow_branches
     file: layers/snow_branches.png
     when: "season == 'winter' and temp_c <= 1 and (snow_depth_cm >= 2 or snowfall_cm_h >= 0.8)"
+    optional: true
+
+  # ---------------- fog, over the ground and tree ----------------
+  - id: fog
+    file: layers/fog.png
+    when: "is_foggy"
     optional: true
 
   # ---------------- falling snow ----------------

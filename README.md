@@ -12,7 +12,7 @@ Built for the Seeed Studio reTerminal E1004, a 13.3" color e-paper frame. The pa
 - A tree for every season: spring, summer, fall, and winter
 - Falling snow in three strengths, and snow that stays on the branches and ground after it stops
 - Light and heavy rain
-- Sunny, cloudy, and stormy skies
+- Sunny, cloudy, stormy, and foggy skies
 - The moon in its real phase, shaded from a thin crescent to full every night
 - A demo of every season and kind of weather
 - Wi-Fi setup from your phone, with no credentials to put in the code
@@ -62,7 +62,7 @@ Hang the frame in landscape with its buttons on the right. It checks the weather
 | **Middle** | Start the demo. In the demo, skip ahead to the next season. |
 | **Bottom** | Open settings. |
 
-The demo shows all 53 combinations of season and weather in turn, with a label for each, so you don't have to wait for a blizzard to see one.
+The demo shows all 46 combinations of season and weather in turn, with a label for each, so you don't have to wait for a blizzard to see one.
 
 ### Settings
 
@@ -80,7 +80,7 @@ Settings close after 15 minutes without use.
 
 ## 🎨 Paint Your Own
 
-The painting is made of separate layers: skies, a ground and tree for each season, snow, rain, night, and the moon. Paint your own on paper or a tablet, export each piece as a 1600 × 1200 PNG, and drop them on the settings page. Only a sky and a summer ground are needed to start.
+The painting is made of separate layers: skies, a ground and tree for each season, snow, fog, rain, night, and the moon. Paint your own on paper or a tablet, export each piece as a 1600 × 1200 PNG, and drop them on the settings page. Only a sky and a summer ground are needed to start.
 
 The [painting guide](guides/painting.md) lists every layer, what to paint, and when the frame shows it.
 

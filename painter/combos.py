@@ -35,12 +35,17 @@ CONDITIONS = [
       "wind_kmh": 50}),
     ("after_snow", "Sunny after a snowfall", ("winter",),
      {"cloud_cover": 5, "snow_depth_cm": 15, "roof_snow_cm": 8, "temp_c": -5}),
-    ("frost", "Frosty clear morning", COLD, {"cloud_cover": 5, "temp_c": -3, "hour": 8}),
-    ("dusk", "Dusk", None, {"phase": "dusk", "cloud_cover": 10, "hour": 18}),
     ("night_full", "Night, full moon", None,
      {"phase": "night", "cloud_cover": 5, "hour": 23, "moon_up": True, "moon_illum": 1.0, "moon_waxing": True}),
-    ("night_crescent", "Night, crescent moon", None,
+    # a different phase each season, so the demo shows the moon's shading
+    ("night_waxing_crescent", "Night, waxing crescent moon", ("spring",),
      {"phase": "night", "cloud_cover": 5, "hour": 20, "moon_up": True, "moon_illum": 0.2, "moon_waxing": True}),
+    ("night_first_quarter", "Night, first quarter moon", ("summer",),
+     {"phase": "night", "cloud_cover": 5, "hour": 22, "moon_up": True, "moon_illum": 0.5, "moon_waxing": True}),
+    ("night_waning_gibbous", "Night, waning gibbous moon", ("autumn",),
+     {"phase": "night", "cloud_cover": 5, "hour": 23, "moon_up": True, "moon_illum": 0.75, "moon_waxing": False}),
+    ("night_waning_crescent", "Night, waning crescent moon", ("winter",),
+     {"phase": "night", "cloud_cover": 5, "hour": 4, "moon_up": True, "moon_illum": 0.2, "moon_waxing": False}),
     ("night_cloudy", "Night, cloudy", None, {"phase": "night", "cloud_cover": 95, "hour": 23}),
 ]
 

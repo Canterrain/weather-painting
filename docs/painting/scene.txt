@@ -11,13 +11,13 @@ opacity n:1.0
 end
 layer sky_cloudy 0 10 3932 0
 file sky_cloudy.wpl
-when v:cloud_cover n:50.0 o:>= v:cloud_cover n:85.0 o:< o:and v:is_raining o:not o:and v:is_snowing o:not o:and
+when v:cloud_cover n:50.0 o:>= v:cloud_cover n:85.0 o:< o:and v:is_foggy o:or v:is_raining o:not o:and v:is_snowing o:not o:and
 amount n:1.0
 opacity n:1.0
 end
 layer sky_stormy 0 10 3932 0
 file sky_stormy.wpl
-when v:cloud_cover n:85.0 o:>= v:is_raining o:or v:is_snowing o:or v:is_stormy o:or
+when v:cloud_cover n:85.0 o:>= v:is_foggy o:not o:and v:is_raining o:or v:is_snowing o:or v:is_stormy o:or
 amount n:1.0
 opacity n:1.0
 end
@@ -41,13 +41,13 @@ opacity n:1.0
 end
 layer ground_fall 0 10 3932 0
 file ground_fall.wpl
-when v:season s:autumn o:== v:season s:winter o:== o:or v:snow_depth_cm n:1.0 o:< o:and
+when v:season s:autumn o:== v:snow_depth_cm n:1.0 o:< o:and
 amount n:1.0
 opacity n:1.0
 end
 layer ground_winter 0 10 3932 0
 file ground_winter.wpl
-when v:snow_depth_cm n:1.0 o:>=
+when v:season s:winter o:== v:snow_depth_cm n:1.0 o:>= o:or
 amount n:1.0
 opacity n:1.0
 end

@@ -133,8 +133,10 @@ function say(id, text, good) {
   el.className = "msg" + (text ? (good === false ? " bad" : " ok") : "");
 }
 
-async function api(path, data) {
-  const opts = data instanceof FormData ? { method: "POST", body: data }
+// a Blob goes as the raw request body, with its file name in X-Name
+async function api(path, data, name) {
+  const opts = data instanceof Blob ? { method: "POST", body: data,
+                                        headers: { "Content-Type": "application/octet-stream", "X-Name": name || "" } }
              : data ? { method: "POST", body: new URLSearchParams(data) } : {};
   const r = await fetch(path, opts);
   let j = {};
@@ -405,9 +407,7 @@ async function uploadFiles(fileList) {
       }
       const panel = toPanel(img.rgba, W, H, 4, state.rotate);
       const blob = encodeWpl(panel.data, growth, panel.w, panel.h);
-      const form = new FormData();
-      form.append("file", blob, job.wpl);
-      await api("/api/upload", form);
+      await api("/api/upload", blob, job.wpl);
       done++;
     } catch (e) { problems.push(e.message); }
   }
@@ -457,9 +457,7 @@ $("fwUpload").onclick = async () => {
   const f = $("fwFile").files[0];
   if (!f) return;
   say("updateMsg", "Sending " + f.name + "…");
-  const form = new FormData();
-  form.append("file", f, "firmware.bin");
-  try { await api("/api/firmware", form); say("updateMsg", "Installed. The frame is restarting."); }
+  try { await api("/api/firmware", f, "firmware.bin"); say("updateMsg", "Installed. The frame is restarting."); }
   catch (e) { say("updateMsg", e.message, false); }
 };
 

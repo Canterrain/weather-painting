@@ -18,13 +18,13 @@ opacity n:1.0
 end
 layer sky_cloudy 0 10 3932 0
 file sky_cloudy.wpl
-when v:cloud_cover n:50.0 o:>= v:cloud_cover n:85.0 o:< o:and v:is_raining o:not o:and v:is_snowing o:not o:and
+when v:cloud_cover n:50.0 o:>= v:cloud_cover n:85.0 o:< o:and v:is_foggy o:or v:is_raining o:not o:and v:is_snowing o:not o:and
 amount n:1.0
 opacity n:1.0
 end
 layer sky_stormy 0 10 3932 0
 file sky_stormy.wpl
-when v:cloud_cover n:85.0 o:>= v:is_raining o:or v:is_snowing o:or v:is_stormy o:or
+when v:cloud_cover n:85.0 o:>= v:is_foggy o:not o:and v:is_raining o:or v:is_snowing o:or v:is_stormy o:or
 amount n:1.0
 opacity n:1.0
 end
@@ -48,13 +48,13 @@ opacity n:1.0
 end
 layer ground_fall 0 10 3932 0
 file ground_fall.wpl
-when v:season s:autumn o:== v:season s:winter o:== o:or v:snow_depth_cm n:1.0 o:< o:and
+when v:season s:autumn o:== v:snow_depth_cm n:1.0 o:< o:and
 amount n:1.0
 opacity n:1.0
 end
 layer ground_winter 0 10 3932 0
 file ground_winter.wpl
-when v:snow_depth_cm n:1.0 o:>=
+when v:season s:winter o:== v:snow_depth_cm n:1.0 o:>= o:or
 amount n:1.0
 opacity n:1.0
 end
@@ -85,6 +85,12 @@ end
 layer snow_branches 0 10 3932 0
 file snow_branches.wpl
 when v:season s:winter o:== v:temp_c n:1.0 o:<= o:and v:snow_depth_cm n:2.0 o:>= v:snowfall_cm_h n:0.8 o:>= o:or o:and
+amount n:1.0
+opacity n:1.0
+end
+layer fog 0 10 3932 0
+file fog.wpl
+when v:is_foggy
 amount n:1.0
 opacity n:1.0
 end
@@ -122,8 +128,8 @@ amount v:moon_illum
 opacity n:1.0
 end
 )WP";
-static const char STANDARD_LAYERS[] = R"WP([{"id": "sky_clear", "required": true, "files": [{"png": "sky_clear.png", "reveal": null, "wpl": "sky_clear.wpl"}]}, {"id": "sky_cloudy", "required": false, "files": [{"png": "sky_cloudy.png", "reveal": null, "wpl": "sky_cloudy.wpl"}]}, {"id": "sky_stormy", "required": false, "files": [{"png": "sky_stormy.png", "reveal": null, "wpl": "sky_stormy.wpl"}]}, {"id": "sun", "required": false, "files": [{"png": "sun.png", "reveal": null, "wpl": "sun.wpl"}]}, {"id": "ground_spring", "required": false, "files": [{"png": "ground_spring.png", "reveal": null, "wpl": "ground_spring.wpl"}]}, {"id": "ground_summer", "required": true, "files": [{"png": "ground_summer.png", "reveal": null, "wpl": "ground_summer.wpl"}]}, {"id": "ground_fall", "required": false, "files": [{"png": "ground_fall.png", "reveal": null, "wpl": "ground_fall.wpl"}]}, {"id": "ground_winter", "required": false, "files": [{"png": "ground_winter.png", "reveal": null, "wpl": "ground_winter.wpl"}]}, {"id": "tree_spring", "required": false, "files": [{"png": "tree_spring.png", "reveal": null, "wpl": "tree_spring.wpl"}]}, {"id": "tree_summer", "required": false, "files": [{"png": "tree_summer.png", "reveal": null, "wpl": "tree_summer.wpl"}]}, {"id": "tree_fall", "required": false, "files": [{"png": "tree_fall.png", "reveal": null, "wpl": "tree_fall.wpl"}]}, {"id": "tree_winter", "required": false, "files": [{"png": "tree_winter.png", "reveal": null, "wpl": "tree_winter.wpl"}]}, {"id": "snow_branches", "required": false, "files": [{"png": "snow_branches.png", "reveal": null, "wpl": "snow_branches.wpl"}]}, {"id": "snowfall", "required": false, "files": [{"png": "snowfall_light.png", "reveal": null, "wpl": "snowfall_light.wpl"}, {"png": "snowfall_heavy.png", "reveal": null, "wpl": "snowfall_heavy.wpl"}, {"png": "snowfall_blizzard.png", "reveal": null, "wpl": "snowfall_blizzard.wpl"}]}, {"id": "rain", "required": false, "files": [{"png": "rain_light.png", "reveal": null, "wpl": "rain_light.wpl"}, {"png": "rain_heavy.png", "reveal": null, "wpl": "rain_heavy.wpl"}]}, {"id": "night", "required": false, "files": [{"png": "night.png", "reveal": null, "wpl": "night.wpl"}]}, {"id": "moon_waxing", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waxing_growth.png", "wpl": "moon__moon_waxing_growth.wpl"}]}, {"id": "moon_waning", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waning_growth.png", "wpl": "moon__moon_waning_growth.wpl"}]}])WP";
-static const char DEMO_CASES[] = R"WP(WPD2 53
+static const char STANDARD_LAYERS[] = R"WP([{"id": "sky_clear", "required": true, "files": [{"png": "sky_clear.png", "reveal": null, "wpl": "sky_clear.wpl"}]}, {"id": "sky_cloudy", "required": false, "files": [{"png": "sky_cloudy.png", "reveal": null, "wpl": "sky_cloudy.wpl"}]}, {"id": "sky_stormy", "required": false, "files": [{"png": "sky_stormy.png", "reveal": null, "wpl": "sky_stormy.wpl"}]}, {"id": "sun", "required": false, "files": [{"png": "sun.png", "reveal": null, "wpl": "sun.wpl"}]}, {"id": "ground_spring", "required": false, "files": [{"png": "ground_spring.png", "reveal": null, "wpl": "ground_spring.wpl"}]}, {"id": "ground_summer", "required": true, "files": [{"png": "ground_summer.png", "reveal": null, "wpl": "ground_summer.wpl"}]}, {"id": "ground_fall", "required": false, "files": [{"png": "ground_fall.png", "reveal": null, "wpl": "ground_fall.wpl"}]}, {"id": "ground_winter", "required": false, "files": [{"png": "ground_winter.png", "reveal": null, "wpl": "ground_winter.wpl"}]}, {"id": "tree_spring", "required": false, "files": [{"png": "tree_spring.png", "reveal": null, "wpl": "tree_spring.wpl"}]}, {"id": "tree_summer", "required": false, "files": [{"png": "tree_summer.png", "reveal": null, "wpl": "tree_summer.wpl"}]}, {"id": "tree_fall", "required": false, "files": [{"png": "tree_fall.png", "reveal": null, "wpl": "tree_fall.wpl"}]}, {"id": "tree_winter", "required": false, "files": [{"png": "tree_winter.png", "reveal": null, "wpl": "tree_winter.wpl"}]}, {"id": "snow_branches", "required": false, "files": [{"png": "snow_branches.png", "reveal": null, "wpl": "snow_branches.wpl"}]}, {"id": "fog", "required": false, "files": [{"png": "fog.png", "reveal": null, "wpl": "fog.wpl"}]}, {"id": "snowfall", "required": false, "files": [{"png": "snowfall_light.png", "reveal": null, "wpl": "snowfall_light.wpl"}, {"png": "snowfall_heavy.png", "reveal": null, "wpl": "snowfall_heavy.wpl"}, {"png": "snowfall_blizzard.png", "reveal": null, "wpl": "snowfall_blizzard.wpl"}]}, {"id": "rain", "required": false, "files": [{"png": "rain_light.png", "reveal": null, "wpl": "rain_light.wpl"}, {"png": "rain_heavy.png", "reveal": null, "wpl": "rain_heavy.wpl"}]}, {"id": "night", "required": false, "files": [{"png": "night.png", "reveal": null, "wpl": "night.wpl"}]}, {"id": "moon_waxing", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waxing_growth.png", "wpl": "moon__moon_waxing_growth.wpl"}]}, {"id": "moon_waning", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waning_growth.png", "wpl": "moon__moon_waning_growth.wpl"}]}])WP";
+static const char DEMO_CASES[] = R"WP(WPD2 46
 demo Spring: Clear day
 v hour n 12
 v month n 4
@@ -388,72 +394,6 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 0
 end
-demo Spring: Frosty clear morning
-v hour n 8
-v month n 4
-v season s spring
-v phase s day
-v is_day n 1
-v is_night n 0
-v sun_alt n 45
-v moon_alt n -20
-v moon_up n 0
-v moon_illum n 0.5
-v moon_waxing n 1
-v moon_phase s first_quarter
-v temp_c n -3
-v cloud_cover n 5
-v wind_kmh n 5
-v weather_code n 0
-v condition s clear
-v rain_mm_h n 0
-v snowfall_cm_h n 0
-v is_raining n 0
-v is_snowing n 0
-v is_foggy n 0
-v is_stormy n 0
-v snow_depth_cm n 0
-v roof_snow_cm n 0
-v puddle_mm n 0
-v puddles_frozen n 0
-v rain_last_24h_mm n 0
-v snow_last_24h_cm n 0
-v ground_wet n 0
-v stars_visible n 0
-end
-demo Spring: Dusk
-v hour n 18
-v month n 4
-v season s spring
-v phase s dusk
-v is_day n 0
-v is_night n 0
-v sun_alt n -3
-v moon_alt n -20
-v moon_up n 0
-v moon_illum n 0.5
-v moon_waxing n 1
-v moon_phase s first_quarter
-v temp_c n 14
-v cloud_cover n 10
-v wind_kmh n 5
-v weather_code n 0
-v condition s clear
-v rain_mm_h n 0
-v snowfall_cm_h n 0
-v is_raining n 0
-v is_snowing n 0
-v is_foggy n 0
-v is_stormy n 0
-v snow_depth_cm n 0
-v roof_snow_cm n 0
-v puddle_mm n 0
-v puddles_frozen n 0
-v rain_last_24h_mm n 0
-v snow_last_24h_cm n 0
-v ground_wet n 0
-v stars_visible n 0
-end
 demo Spring: Night, full moon
 v hour n 23
 v month n 4
@@ -487,7 +427,7 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 1
 end
-demo Spring: Night, crescent moon
+demo Spring: Night, waxing crescent moon
 v hour n 20
 v month n 4
 v season s spring
@@ -784,39 +724,6 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 0
 end
-demo Summer: Dusk
-v hour n 18
-v month n 7
-v season s summer
-v phase s dusk
-v is_day n 0
-v is_night n 0
-v sun_alt n -3
-v moon_alt n -20
-v moon_up n 0
-v moon_illum n 0.5
-v moon_waxing n 1
-v moon_phase s first_quarter
-v temp_c n 27
-v cloud_cover n 10
-v wind_kmh n 5
-v weather_code n 0
-v condition s clear
-v rain_mm_h n 0
-v snowfall_cm_h n 0
-v is_raining n 0
-v is_snowing n 0
-v is_foggy n 0
-v is_stormy n 0
-v snow_depth_cm n 0
-v roof_snow_cm n 0
-v puddle_mm n 0
-v puddles_frozen n 0
-v rain_last_24h_mm n 0
-v snow_last_24h_cm n 0
-v ground_wet n 0
-v stars_visible n 0
-end
 demo Summer: Night, full moon
 v hour n 23
 v month n 7
@@ -850,8 +757,8 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 1
 end
-demo Summer: Night, crescent moon
-v hour n 20
+demo Summer: Night, first quarter moon
+v hour n 22
 v month n 7
 v season s summer
 v phase s night
@@ -860,9 +767,9 @@ v is_night n 1
 v sun_alt n -30
 v moon_alt n 30
 v moon_up n 1
-v moon_illum n 0.2
+v moon_illum n 0.5
 v moon_waxing n 1
-v moon_phase s waxing_crescent
+v moon_phase s first_quarter
 v temp_c n 27
 v cloud_cover n 5
 v wind_kmh n 5
@@ -1180,72 +1087,6 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 0
 end
-demo Autumn: Frosty clear morning
-v hour n 8
-v month n 10
-v season s autumn
-v phase s day
-v is_day n 1
-v is_night n 0
-v sun_alt n 45
-v moon_alt n -20
-v moon_up n 0
-v moon_illum n 0.5
-v moon_waxing n 1
-v moon_phase s first_quarter
-v temp_c n -3
-v cloud_cover n 5
-v wind_kmh n 5
-v weather_code n 0
-v condition s clear
-v rain_mm_h n 0
-v snowfall_cm_h n 0
-v is_raining n 0
-v is_snowing n 0
-v is_foggy n 0
-v is_stormy n 0
-v snow_depth_cm n 0
-v roof_snow_cm n 0
-v puddle_mm n 0
-v puddles_frozen n 0
-v rain_last_24h_mm n 0
-v snow_last_24h_cm n 0
-v ground_wet n 0
-v stars_visible n 0
-end
-demo Autumn: Dusk
-v hour n 18
-v month n 10
-v season s autumn
-v phase s dusk
-v is_day n 0
-v is_night n 0
-v sun_alt n -3
-v moon_alt n -20
-v moon_up n 0
-v moon_illum n 0.5
-v moon_waxing n 1
-v moon_phase s first_quarter
-v temp_c n 12
-v cloud_cover n 10
-v wind_kmh n 5
-v weather_code n 0
-v condition s clear
-v rain_mm_h n 0
-v snowfall_cm_h n 0
-v is_raining n 0
-v is_snowing n 0
-v is_foggy n 0
-v is_stormy n 0
-v snow_depth_cm n 0
-v roof_snow_cm n 0
-v puddle_mm n 0
-v puddles_frozen n 0
-v rain_last_24h_mm n 0
-v snow_last_24h_cm n 0
-v ground_wet n 0
-v stars_visible n 0
-end
 demo Autumn: Night, full moon
 v hour n 23
 v month n 10
@@ -1279,8 +1120,8 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 1
 end
-demo Autumn: Night, crescent moon
-v hour n 20
+demo Autumn: Night, waning gibbous moon
+v hour n 23
 v month n 10
 v season s autumn
 v phase s night
@@ -1289,9 +1130,9 @@ v is_night n 1
 v sun_alt n -30
 v moon_alt n 30
 v moon_up n 1
-v moon_illum n 0.2
-v moon_waxing n 1
-v moon_phase s waxing_crescent
+v moon_illum n 0.75
+v moon_waxing n 0
+v moon_phase s waning_gibbous
 v temp_c n 12
 v cloud_cover n 5
 v wind_kmh n 5
@@ -1708,72 +1549,6 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 0
 end
-demo Winter: Frosty clear morning
-v hour n 8
-v month n 1
-v season s winter
-v phase s day
-v is_day n 1
-v is_night n 0
-v sun_alt n 45
-v moon_alt n -20
-v moon_up n 0
-v moon_illum n 0.5
-v moon_waxing n 1
-v moon_phase s first_quarter
-v temp_c n -3
-v cloud_cover n 5
-v wind_kmh n 5
-v weather_code n 0
-v condition s clear
-v rain_mm_h n 0
-v snowfall_cm_h n 0
-v is_raining n 0
-v is_snowing n 0
-v is_foggy n 0
-v is_stormy n 0
-v snow_depth_cm n 0
-v roof_snow_cm n 0
-v puddle_mm n 0
-v puddles_frozen n 0
-v rain_last_24h_mm n 0
-v snow_last_24h_cm n 0
-v ground_wet n 0
-v stars_visible n 0
-end
-demo Winter: Dusk
-v hour n 18
-v month n 1
-v season s winter
-v phase s dusk
-v is_day n 0
-v is_night n 0
-v sun_alt n -3
-v moon_alt n -20
-v moon_up n 0
-v moon_illum n 0.5
-v moon_waxing n 1
-v moon_phase s first_quarter
-v temp_c n -3
-v cloud_cover n 10
-v wind_kmh n 5
-v weather_code n 0
-v condition s clear
-v rain_mm_h n 0
-v snowfall_cm_h n 0
-v is_raining n 0
-v is_snowing n 0
-v is_foggy n 0
-v is_stormy n 0
-v snow_depth_cm n 0
-v roof_snow_cm n 0
-v puddle_mm n 0
-v puddles_frozen n 0
-v rain_last_24h_mm n 0
-v snow_last_24h_cm n 0
-v ground_wet n 0
-v stars_visible n 0
-end
 demo Winter: Night, full moon
 v hour n 23
 v month n 1
@@ -1807,8 +1582,8 @@ v snow_last_24h_cm n 0
 v ground_wet n 0
 v stars_visible n 1
 end
-demo Winter: Night, crescent moon
-v hour n 20
+demo Winter: Night, waning crescent moon
+v hour n 4
 v month n 1
 v season s winter
 v phase s night
@@ -1818,8 +1593,8 @@ v sun_alt n -30
 v moon_alt n 30
 v moon_up n 1
 v moon_illum n 0.2
-v moon_waxing n 1
-v moon_phase s waxing_crescent
+v moon_waxing n 0
+v moon_phase s waning_crescent
 v temp_c n -3
 v cloud_cover n 5
 v wind_kmh n 5
