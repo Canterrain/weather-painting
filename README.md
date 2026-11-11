@@ -24,7 +24,7 @@ E-paper only uses power while it changes, so the frame sleeps between checks and
 
 ## 🛠 Hardware
 
-- A Seeed Studio reTerminal E1004
+- A Seeed Studio reTerminal E1004, from [Amazon](https://link.amazon/B09WHcVBu) or [Seeed Studio](https://seeedtechnologycoltd.sjv.io/YVa1rB) (affiliate links)
 - A microSD card, any size, formatted as FAT32
 - A USB-C data cable and a computer for the first installation
 
