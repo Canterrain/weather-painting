@@ -8,7 +8,7 @@ Built for the Seeed Studio reTerminal E1004, a 13.3" color e-paper frame. The pa
 
 ## ✨ Features
 
-- Live weather for your city, with no account or API key, checked against nearby airports' weather reports so rain, snow, and thunderstorms show up as they happen
+- Live weather for your city, with no account or API key, checked against weather radar and nearby airports' reports so rain, snow, and thunderstorms show up as they happen
 - A tree for every season: spring, summer, fall, and winter
 - Falling snow in three strengths, and snow that stays on the branches and ground after it stops
 - Light and heavy rain
@@ -116,6 +116,8 @@ The firmware uses Arduino for ESP32. The painter tools are Python, for previewin
 The code is licensed under the [Creative Commons Attribution–NonCommercial 4.0 International License](https://creativecommons.org/licenses/by-nc/4.0/). See [LICENSE](LICENSE). Third-party libraries retain their own licenses.
 
 The paintings in `painting/layers/` and `docs/painting/` are © 2026 Julia Hendrickson and licensed under the [Creative Commons Attribution–NonCommercial–NoDerivatives 4.0 International License](https://creativecommons.org/licenses/by-nc-nd/4.0/). You're welcome to show them on your own frame. Please don't sell them or share altered versions. See [painting/LICENSE](painting/LICENSE).
+
+Weather data comes from [Open-Meteo](https://open-meteo.com/) (CC BY 4.0), airport reports from the [Aviation Weather Center](https://aviationweather.gov/), and radar from [RainViewer](https://www.rainviewer.com/), whose free radar is for personal, non-commercial use.
 
 © 2026 Josh Hendrickson
 

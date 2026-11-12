@@ -1,8 +1,8 @@
 {
   "version": "0.2.1",
-  "builtAt": "2026-11-12T03:00:59+00:00",
+  "builtAt": "2026-11-12T03:14:01+00:00",
   "fqbn": "esp32:esp32:XIAO_ESP32S3:PSRAM=opi",
-  "sourceSha256": "5d12d9a2ac811f541c9bc3207201c73b8a5c5722affc93dadd6878444be126d1",
+  "sourceSha256": "5b0d998e29b00aff0a8b400b313657f5421827a7351961413877e2f939867268",
   "sourceFiles": [
     "astro.cpp",
     "astro.h",
@@ -58,8 +58,8 @@
     {
       "path": "firmware.bin",
       "offset": 65536,
-      "bytes": 1401824,
-      "sha256": "7ce96a05e1895810b7b05687874bc7f69a098b2a6fea0781929ef1acf7117e4c"
+      "bytes": 1436112,
+      "sha256": "1b3736b7cf8fd9387adb9d51e8cd91d42aeebca92e6dbd421737019fbf553235"
     }
   ]
 }

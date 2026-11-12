@@ -1,11 +1,10 @@
 """Fetch weather from Open-Meteo (free, no API key) and turn it into a
 "world state": a flat dict of values the scene's layer rules can read.
 
-What's falling right now is decided by blend(): nearby airports' weather
-reports, which say what's actually happening, vote together with the
-forecast for this exact spot, which knows whether a storm is coming or
-going. A forecast alone can lag a storm by half an hour and rarely knows
-about thunder; an airport alone can be 30 km from the window.
+What's falling right now is decided by blend(): weather radar over this
+exact spot, nearby airports' weather reports and the forecast vote
+together. Radar sees rain where you are, airports say what kind it is and
+hear thunder, and the forecast knows whether a storm is coming or going.
 
 Things that build up over time (snow on the ground, snow on the roof,
 puddles) are simulated hour by hour over the last 3 days, so the painting
@@ -26,6 +25,7 @@ from . import astro
 OPEN_METEO = "https://api.open-meteo.com/v1/forecast"
 GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
 METAR = "https://aviationweather.gov/api/data/metar"
+RAINVIEWER = "https://api.rainviewer.com/public/weather-maps.json"
 HOURLY = ["temperature_2m", "precipitation", "rain", "showers", "snowfall", "snow_depth",
           "weather_code", "cloud_cover", "wind_speed_10m", "is_day"]
 
@@ -331,6 +331,87 @@ def model_soon(data: dict, now: float) -> tuple[float, float]:
     return rain, snow
 
 
+# --- weather radar (RainViewer) ----------------------------------------------
+# RainViewer publishes radar from national weather services as map tiles,
+# free and without a key for personal, non-commercial use, with credit
+# (on the settings page and in the README). Where a country shares no radar,
+# its coverage map says so and radar sits out the vote.
+
+RADAR_ZOOM = 7            # RainViewer's highest, about 1 km per pixel here
+RADAR_RADIUS_PX = 2       # look about 2 km around the spot
+RADAR_MAX_AGE = 30        # minutes before a radar frame is too old
+RADAR_WET_DBZ = 20        # echoes weaker than this are mostly drizzle aloft or noise
+
+# RainViewer's Universal Blue colors for -32..75 dBZ, rain only (snow coloring
+# off); repeated colors keep the lower strength. From its published table,
+# as used in SDupuie's esp32-weather-alarm-clock fork of the round display.
+RADAR_COLORS = [
+    0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000,
+    0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000,
+    0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x636159, 0x66635A,
+    0x69665C, 0x6C685D, 0x6F6B5F, 0x726E61, 0x757062, 0x787364, 0x7C7565, 0x7F7867,
+    0x827B69, 0x857D6A, 0x88806C, 0x8B826D, 0x8E856F, 0x928871, 0x9E9375, 0xAA9E79,
+    0xB6A97E, 0xC2B482, 0xCEC087, 0xD2C48B, 0xD6C88F, 0xDACC93, 0xDED097, 0x88DDEE,
+    0x6CD1EB, 0x51C5E8, 0x36BAE5, 0x1BAEE2, 0x00A3E0, 0x009AD5, 0x0091CA, 0x0088BF,
+    0x007FB4, 0x0077AA, 0x0070A3, 0x00699C, 0x006295, 0x005B8E, 0x005588, 0x005180,
+    0x004E78, 0x004A70, 0x004768, 0xFFEE00, 0xFFE000, 0xFFD200, 0xFFC500, 0xFFB700,
+    0xFFAA00, 0xFF9F00, 0xFF9500, 0xFF8B00, 0xFF8100, 0xFF4400, 0xF23600, 0xE62800,
+    0xD91B00, 0xCD0D00, 0xC10000, 0xA80000, 0x8F0000, 0x760000, 0x5D0000, 0xFFAAFF,
+    0xFF9FFF, 0xFF95FF, 0xFF8BFF, 0xFF81FF, 0xFF77FF, 0xFF6CFF, 0xFF62FF, 0xFF58FF,
+    0xFF4EFF, 0xFFFFFF,
+]
+RADAR_DBZ = {}
+for _i, _c in enumerate(RADAR_COLORS):
+    if _i >= 22:
+        RADAR_DBZ.setdefault(_c, _i - 32)
+
+
+def tile_pixel(lat: float, lon: float, zoom: int = RADAR_ZOOM) -> tuple[int, int, int, int]:
+    """Web map tile x, y and the pixel within its 256x256 image."""
+    n = 2 ** zoom
+    xf = (lon + 180) / 360 * n
+    yf = (1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n
+    x, y = int(xf), int(yf)
+    return x, y, int((xf - x) * 256), int((yf - y) * 256)
+
+
+def _png_rgba(url: str, timeout: float):
+    import io
+    from PIL import Image
+    with urllib.request.urlopen(url, timeout=timeout) as r:
+        return Image.open(io.BytesIO(r.read())).convert("RGBA")
+
+
+def fetch_radar(lat: float, lon: float, now: float, timeout: float = 15) -> dict | None:
+    """The strongest radar echo (dBZ) within a couple of km, from the latest
+    frame, or None where there's no radar or it's out of date."""
+    with urllib.request.urlopen(RAINVIEWER, timeout=timeout) as r:
+        maps = json.load(r)
+    frames = maps.get("radar", {}).get("past") or []
+    if not frames or now - frames[-1]["time"] > RADAR_MAX_AGE * 60:
+        return None
+    host, frame = maps["host"], frames[-1]
+    x, y, px, py = tile_pixel(lat, lon)
+    coverage = _png_rgba(f"{host}/v2/coverage/0/256/{RADAR_ZOOM}/{x}/{y}/0/0_0.png", timeout)
+    if coverage.getpixel((px, py))[3]:
+        return None   # opaque: no radar here
+    tile = _png_rgba(f"{host}{frame['path']}/256/{RADAR_ZOOM}/{x}/{y}/2/0_0.png", timeout)
+    dbz = -32
+    for dy in range(-RADAR_RADIUS_PX, RADAR_RADIUS_PX + 1):
+        for dx in range(-RADAR_RADIUS_PX, RADAR_RADIUS_PX + 1):
+            if dx * dx + dy * dy > RADAR_RADIUS_PX ** 2:
+                continue
+            r_, g, b, a = tile.getpixel((min(max(px + dx, 0), 255), min(max(py + dy, 0), 255)))
+            if a:
+                dbz = max(dbz, RADAR_DBZ.get((r_ << 16) | (g << 8) | b, -32))
+    return {"dbz": dbz, "age_min": round((now - frame["time"]) / 60)}
+
+
+def radar_rain_mm_h(dbz: float) -> float:
+    """Rain rate from echo strength (Marshall-Palmer, Z = 200 R^1.6)."""
+    return round((10 ** (dbz / 10) / 200) ** (1 / 1.6), 1)
+
+
 def station_weight(km: float) -> float:
     """How much an airport's vote counts: the same as the forecast's at
     12 km, a third of it at 25 km."""
@@ -338,21 +419,23 @@ def station_weight(km: float) -> float:
 
 
 FORECAST_WEIGHT = 0.5
+RADAR_WEIGHT = 1.5     # radar over the spot outweighs the forecast and a nearby airport together
 THUNDER_KM = 30        # thunder is heard this far, and means storm clouds overhead
 FOG_KM = 25            # fog is local: farther airports don't count
 
 
-def blend(state: dict, near: list[dict], soon: tuple[float, float]) -> dict:
+def blend(state: dict, near: list[dict], soon: tuple[float, float], radar: dict | None = None) -> dict:
     """Decide what's falling right now from the airports' reports and the
     forecast for this spot.
 
     Rain or not is a vote: each airport counts more the closer it is, and the
     forecast votes for this exact spot, wet if it has rain or snow now or
-    within half an hour. A storm the forecast missed is caught when the
-    airports around agree on it; a shower at one airport 25 km away that the
-    forecast says won't reach here is left out. What kind and how hard comes
-    from the nearest airport measuring it."""
-    if not near:
+    within half an hour. Radar over the spot, where there is radar, counts
+    most. A storm the forecast missed is caught when radar or the airports
+    around see it; a shower at one airport 25 km away that's heading
+    elsewhere is left out. How hard comes from radar, or else the nearest
+    airport measuring it; rain or snow from that airport, or the forecast."""
+    if not near and radar is None:
         return state
     soon_rain, soon_snow = soon
     forecast_wet = state["is_raining"] or state["is_snowing"] or soon_rain > 0.2 or soon_snow > 0.1
@@ -360,6 +443,9 @@ def blend(state: dict, near: list[dict], soon: tuple[float, float]) -> dict:
     for r in near:
         w = r["wx"]
         vote += station_weight(r["km"]) * (1 if w["rain_mm_h"] or w["snowfall_cm_h"] else -1)
+    radar_wet = radar is not None and radar["dbz"] >= RADAR_WET_DBZ
+    if radar is not None:
+        vote += RADAR_WEIGHT if radar_wet else -RADAR_WEIGHT
     falling = vote > 0
 
     rain = snow = 0.0
@@ -370,11 +456,18 @@ def blend(state: dict, near: list[dict], soon: tuple[float, float]) -> dict:
             w = measured["wx"]
             rain, snow = w["rain_mm_h"], w["snowfall_cm_h"]
             freezing, drizzle_only = w["freezing"], w["drizzle_only"]
-        else:   # only the forecast has it
+        else:   # what kind comes from the forecast
             rain = max(state["rain_mm_h"], soon_rain)
             snow = max(state["snowfall_cm_h"], soon_snow)
             drizzle_only = state["condition"] == "drizzle"
             freezing = state["condition"] == "freezing_rain"
+        if radar_wet:   # how hard comes from radar
+            rate = radar_rain_mm_h(radar["dbz"])
+            if snow and not rain:
+                snow = rate      # about 1 cm of snow per mm of water
+            else:
+                rain, snow = rate, (rate if snow else 0.0)
+            drizzle_only = drizzle_only and bool(measured or state["condition"] == "drizzle")
     thunder = state["is_stormy"] or any(r["wx"]["thunder"] and r["km"] <= THUNDER_KM for r in near)
     fog_airport = next((r for r in near if r["km"] <= FOG_KM), None)
     fog = fog_airport["wx"]["fog"] if fog_airport else state["is_foggy"]
@@ -398,8 +491,9 @@ def blend(state: dict, near: list[dict], soon: tuple[float, float]) -> dict:
         "is_snowing": snow > 0,
         "is_foggy": fog,
         "is_stormy": thunder,
-        "report": "; ".join(f"{r['icaoId']} {r['km']:.0f} km: {r.get('wxString') or 'dry'}" for r in near[:3])
-                  + f"; forecast: {'wet' if forecast_wet else 'dry'}",
+        "report": "; ".join(([f"radar {radar['dbz']} dBZ"] if radar else [])
+                            + [f"{r['icaoId']} {r['km']:.0f} km: {r.get('wxString') or 'dry'}" for r in near[:3]]
+                            + [f"forecast: {'wet' if forecast_wet else 'dry'}"]),
     })
     return s
 

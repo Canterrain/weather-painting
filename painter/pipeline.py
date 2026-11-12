@@ -15,8 +15,8 @@ from PIL import Image
 
 from . import epaper, native
 from .scene import Scene
-from .weather import (DEFAULT_STATE, blend, build_state, derive, fetch_open_meteo, fetch_reports, geocode,
-                      model_soon, stations)
+from .weather import (DEFAULT_STATE, blend, build_state, derive, fetch_open_meteo, fetch_radar, fetch_reports,
+                      geocode, model_soon, stations)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -56,7 +56,11 @@ def live_state(cfg: dict) -> dict:
         reports = fetch_reports(lat, lon)
     except OSError:
         reports = []   # no airport reports: keep the forecast's "right now"
-    return blend(state, stations(reports, lat, lon, now), model_soon(data, now))
+    try:
+        radar = fetch_radar(lat, lon, now)
+    except OSError:
+        radar = None
+    return blend(state, stations(reports, lat, lon, now), model_soon(data, now), radar)
 
 
 def scenario_state(path: str | Path, overrides: dict | None = None) -> dict:

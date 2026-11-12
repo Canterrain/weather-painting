@@ -1,6 +1,7 @@
 #include "weather.h"
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
+#include <PNGdec.h>
 #include <WiFiClientSecure.h>
 #include <math.h>
 #include <algorithm>
@@ -145,9 +146,10 @@ static const char *time_phase(double sun_alt, int local_hour) {
 }
 
 // --- airport weather reports (METAR) ----------------------------------------
-// What's falling right now is decided by blend(): nearby airports' reports,
-// which say what's actually happening, vote together with the forecast for
-// this exact spot, which knows whether a storm is coming or going. A port of
+// What's falling right now is decided by blend(): weather radar over this
+// exact spot, nearby airports' reports and the forecast vote together. Radar
+// sees rain where you are, airports say what kind it is and hear thunder,
+// and the forecast knows whether a storm is coming or going. A port of
 // blend() in painter/weather.py.
 
 static const double REPORT_KM = 50;          // farthest airport worth believing
@@ -194,6 +196,141 @@ static Observed read_weather(const String &wx) {
 }
 
 
+// --- weather radar (RainViewer) -----------------------------------------------
+// Radar from national weather services, free and without a key for personal,
+// non-commercial use, with credit (settings page and README). Where a country
+// shares no radar, RainViewer's coverage map says so and radar sits out.
+
+static const int RADAR_ZOOM = 7;           // RainViewer's highest, about 1 km per pixel here
+static const int RADAR_RADIUS_PX = 2;      // look about 2 km around the spot
+static const double RADAR_MAX_AGE = 30;    // minutes before a radar frame is too old
+static const int RADAR_WET_DBZ = 20;       // weaker echoes are mostly drizzle aloft or noise
+static const int RADAR_NONE = -32;
+
+// RainViewer's Universal Blue colors for -32..75 dBZ, rain only (snow coloring
+// off); repeated colors keep the lower strength. From its published table, as
+// used in SDupuie's esp32-weather-alarm-clock fork of the round display.
+static const uint32_t RADAR_COLORS[] = {
+  0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000,
+  0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000,
+  0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x636159, 0x66635A,
+  0x69665C, 0x6C685D, 0x6F6B5F, 0x726E61, 0x757062, 0x787364, 0x7C7565, 0x7F7867,
+  0x827B69, 0x857D6A, 0x88806C, 0x8B826D, 0x8E856F, 0x928871, 0x9E9375, 0xAA9E79,
+  0xB6A97E, 0xC2B482, 0xCEC087, 0xD2C48B, 0xD6C88F, 0xDACC93, 0xDED097, 0x88DDEE,
+  0x6CD1EB, 0x51C5E8, 0x36BAE5, 0x1BAEE2, 0x00A3E0, 0x009AD5, 0x0091CA, 0x0088BF,
+  0x007FB4, 0x0077AA, 0x0070A3, 0x00699C, 0x006295, 0x005B8E, 0x005588, 0x005180,
+  0x004E78, 0x004A70, 0x004768, 0xFFEE00, 0xFFE000, 0xFFD200, 0xFFC500, 0xFFB700,
+  0xFFAA00, 0xFF9F00, 0xFF9500, 0xFF8B00, 0xFF8100, 0xFF4400, 0xF23600, 0xE62800,
+  0xD91B00, 0xCD0D00, 0xC10000, 0xA80000, 0x8F0000, 0x760000, 0x5D0000, 0xFFAAFF,
+  0xFF9FFF, 0xFF95FF, 0xFF8BFF, 0xFF81FF, 0xFF77FF, 0xFF6CFF, 0xFF62FF, 0xFF58FF,
+  0xFF4EFF, 0xFFFFFF,
+};
+
+static int radar_dbz(uint32_t rgb) {
+  for (int i = 22; i < (int)(sizeof RADAR_COLORS / sizeof *RADAR_COLORS); ++i)
+    if (RADAR_COLORS[i] == rgb) return i - 32;
+  return RADAR_NONE;
+}
+
+static bool https_get_bytes(const String &url, std::vector<uint8_t> &out) {
+  WiFiClientSecure tls;
+  tls.setInsecure();   // public weather data, nothing secret
+  HTTPClient http;
+  http.setConnectTimeout(10000);
+  http.setTimeout(20000);
+  if (!http.begin(tls, url)) return false;
+  int code = http.GET();
+  bool ok = code == 200;
+  if (ok) {
+    int len = http.getSize();
+    auto *stream = http.getStreamPtr();
+    out.clear();
+    uint8_t buf[1024];
+    uint32_t t = millis();
+    while (http.connected() && (len < 0 || (int)out.size() < len) && millis() - t < 20000) {
+      int n = stream->readBytes(buf, sizeof buf);
+      if (n <= 0) { if (len < 0) break; else continue; }
+      out.insert(out.end(), buf, buf + n);
+    }
+    ok = len < 0 || (int)out.size() == len;
+  } else {
+    LOG.printf("[weather] HTTP %d for %s\n", code, url.c_str());
+  }
+  http.end();
+  return ok;
+}
+
+// What a tile looks like around one pixel: the strongest echo, or for the
+// coverage map whether that pixel is opaque (no radar).
+struct TileLook {
+  int px, py;
+  int dbz = RADAR_NONE;
+  bool opaque = false;
+};
+
+static int tile_row(PNGDRAW *d) {
+  TileLook *look = (TileLook *)d->pUser;
+  int dy = d->y - look->py;
+  if (dy < -RADAR_RADIUS_PX || dy > RADAR_RADIUS_PX) return 1;
+  int bpp = d->iPixelType == PNG_PIXEL_TRUECOLOR_ALPHA ? 4 : d->iPixelType == PNG_PIXEL_TRUECOLOR ? 3 : 0;
+  if (!bpp) return 0;   // RainViewer sends 8-bit RGBA; anything else isn't read
+  for (int dx = -RADAR_RADIUS_PX; dx <= RADAR_RADIUS_PX; ++dx) {
+    if (dx * dx + dy * dy > RADAR_RADIUS_PX * RADAR_RADIUS_PX) continue;
+    int x = constrain(look->px + dx, 0, d->iWidth - 1);
+    const uint8_t *p = d->pPixels + x * bpp;
+    bool visible = bpp == 3 || p[3] != 0;
+    if (dx == 0 && dy == 0) look->opaque = visible;
+    if (visible) look->dbz = max(look->dbz, radar_dbz(((uint32_t)p[0] << 16) | (p[1] << 8) | p[2]));
+  }
+  return 1;
+}
+
+static bool look_at_tile(const String &url, TileLook &look) {
+  std::vector<uint8_t> png_bytes;
+  if (!https_get_bytes(url, png_bytes) || png_bytes.empty()) return false;
+  PNG *png = new PNG();
+  bool ok = png->openRAM(png_bytes.data(), png_bytes.size(), tile_row) == PNG_SUCCESS &&
+            png->decode(&look, 0) == PNG_SUCCESS;
+  png->close();
+  delete png;
+  return ok;
+}
+
+// The strongest radar echo (dBZ) within a couple of km in the latest frame;
+// false where there's no radar or it's out of date.
+static bool radar_echo(const Place &place, double now, int &dbz, int &age_min) {
+  String body;
+  if (!https_get("https://api.rainviewer.com/public/weather-maps.json", body)) return false;
+  JsonDocument doc;
+  if (deserializeJson(doc, body)) return false;
+  body = String();
+  JsonArray past = doc["radar"]["past"];
+  if (past.size() == 0) return false;
+  JsonObject frame = past[past.size() - 1];
+  double frame_time = frame["time"] | 0.0;
+  if (now - frame_time > RADAR_MAX_AGE * 60) return false;
+  String host = doc["host"] | "", path = frame["path"] | "";
+
+  int n = 1 << RADAR_ZOOM;
+  double xf = (place.lon + 180) / 360 * n;
+  double yf = (1 - asinh(tan(place.lat * M_PI / 180)) / M_PI) / 2 * n;
+  int x = (int)xf, y = (int)yf;
+  String xyz = "/256/" + String(RADAR_ZOOM) + "/" + String(x) + "/" + String(y);
+  TileLook look;
+  look.px = (int)((xf - x) * 256);
+  look.py = (int)((yf - y) * 256);
+
+  TileLook coverage = look;
+  if (!look_at_tile(host + "/v2/coverage/0" + xyz + "/0/0_0.png", coverage) || coverage.opaque) return false;
+  if (!look_at_tile(host + path + xyz + "/2/0_0.png", look)) return false;
+  dbz = look.dbz;
+  age_min = (int)lrint((now - frame_time) / 60);
+  return true;
+}
+
+// Rain rate from echo strength (Marshall-Palmer, Z = 200 R^1.6).
+static double radar_rain_mm_h(int dbz) { return rint(pow(pow(10, dbz / 10.0) / 200, 1 / 1.6) * 10) / 10; }
+
 struct Station {
   String id, wx;
   double km = 0, time = 0;
@@ -205,6 +342,7 @@ struct Station {
 static double station_weight(double km) { return 1.0 / (1.0 + pow(km / 12.0, 2)); }
 
 static const double FORECAST_WEIGHT = 0.5;
+static const double RADAR_WEIGHT = 1.5;    // radar over the spot outweighs the forecast and a nearby airport together
 static const double THUNDER_KM = 30;   // thunder is heard this far, and means storm clouds overhead
 static const double FOG_KM = 25;       // fog is local: farther airports don't count
 
@@ -257,8 +395,10 @@ static std::vector<Station> stations(const Place &place, double now) {
 // comes from the nearest airport measuring it.
 static void blend(const Place &place, double now, double soon_rain, double soon_snow, State &st) {
   std::vector<Station> near = stations(place, now);
-  if (near.empty()) {
-    LOG.println("[weather] no recent airport report within 50 km; using the forecast");
+  int dbz = RADAR_NONE, radar_age = 0;
+  bool have_radar = radar_echo(place, now, dbz, radar_age);
+  if (near.empty() && !have_radar) {
+    LOG.println("[weather] no radar or recent airport report nearby; using the forecast");
     g_report[0] = 0;
     return;
   }
@@ -267,6 +407,8 @@ static void blend(const Place &place, double now, double soon_rain, double soon_
   bool forecast_wet = n("is_raining") || n("is_snowing") || soon_rain > 0.2 || soon_snow > 0.1;
   double vote = forecast_wet ? FORECAST_WEIGHT : -FORECAST_WEIGHT;
   for (auto &s : near) vote += station_weight(s.km) * (s.o.rain > 0 || s.o.snow > 0 ? 1 : -1);
+  bool radar_wet = have_radar && dbz >= RADAR_WET_DBZ;
+  if (have_radar) vote += radar_wet ? RADAR_WEIGHT : -RADAR_WEIGHT;
   bool falling = vote > 0;
 
   double rain = 0, snow = 0;
@@ -279,11 +421,17 @@ static void blend(const Place &place, double now, double soon_rain, double soon_
       snow = measured->o.snow;
       freezing = measured->o.freezing;
       drizzle_only = measured->o.drizzle_only;
-    } else {   // only the forecast has it
+    } else {   // what kind comes from the forecast
       rain = fmax(n("rain_mm_h"), soon_rain);
       snow = fmax(n("snowfall_cm_h"), soon_snow);
       drizzle_only = fcond == "drizzle";
       freezing = fcond == "freezing_rain";
+    }
+    if (radar_wet) {   // how hard comes from radar
+      double rate = radar_rain_mm_h(dbz);
+      if (snow > 0 && rain == 0) snow = rate;   // about 1 cm of snow per mm of water
+      else { snow = snow > 0 ? rate : 0; rain = rate; }
+      drizzle_only = drizzle_only && (measured || fcond == "drizzle");
     }
   }
   bool thunder = n("is_stormy") != 0;
@@ -305,6 +453,7 @@ static void blend(const Place &place, double now, double soon_rain, double soon_
   st.set("is_stormy", thunder);
 
   String r;
+  if (have_radar) r += "radar " + String(dbz) + " dBZ; ";
   for (size_t i = 0; i < near.size() && i < 3; ++i)
     r += near[i].id + " " + String((int)lrint(near[i].km)) + " km: " + (near[i].wx.length() ? near[i].wx : "dry") + "; ";
   r += String("forecast: ") + (forecast_wet ? "wet" : "dry");
@@ -375,9 +524,9 @@ bool fetch_state(const Place &place, double now, State &st) {
   double cloud = cur["cloud_cover"].isNull() ? num(hourly["cloud_cover"][idx]) : num(cur["cloud_cover"]);
   double wind = cur["wind_speed_10m"].isNull() ? num(hourly["wind_speed_10m"][idx]) : num(cur["wind_speed_10m"]);
 
-  time_t local = (time_t)(now + num(doc["utc_offset_seconds"]));
+  time_t local_now = (time_t)(now + num(doc["utc_offset_seconds"]));
   struct tm tm_local;
-  gmtime_r(&local, &tm_local);
+  gmtime_r(&local_now, &tm_local);
   int hour = tm_local.tm_hour, month = tm_local.tm_mon + 1;
 
   SkyState sky = sky_at(now, place.lat, place.lon);

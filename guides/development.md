@@ -11,7 +11,7 @@ The sketch is `firmware/painting_frame/painting_frame.ino`.
 1. Install the ESP32 board package by Espressif Systems.
 2. Choose **XIAO_ESP32S3** as the board.
 3. Choose **OPI PSRAM** under PSRAM. Leave the partition scheme at its default, which has room for updates over Wi-Fi.
-4. Install **Seeed_GFX** from [Seeed Studio's repository](https://github.com/Seeed-Studio/Seeed_GFX) and **ArduinoJson** from the Library Manager.
+4. Install **Seeed_GFX** from [Seeed Studio's repository](https://github.com/Seeed-Studio/Seeed_GFX), and **ArduinoJson** and **PNGdec** from the Library Manager.
 5. Open `painting_frame.ino`, compile, then upload.
 
 The current local build uses:
@@ -21,6 +21,7 @@ The current local build uses:
 | Arduino ESP32 core | 3.3.10 |
 | Seeed_GFX | 2.0.3 |
 | ArduinoJson | 7.4.3 |
+| PNGdec | 1.1.6 |
 
 `driver.h` selects the reTerminal E1004 screen for Seeed_GFX.
 
@@ -64,7 +65,7 @@ The command checks every rule in the standard layout against the demo combinatio
 The frame does everything itself; no computer or server is involved once it's set up. Each time it wakes, it:
 
 1. Connects to Wi-Fi and gets the weather for your city from [Open-Meteo](https://open-meteo.com/).
-2. Checks nearby airports' weather reports, from the [Aviation Weather Center](https://aviationweather.gov/data/api/), for what's falling right now: rain, snow, drizzle, thunder, or fog. Airports report at least hourly and again within minutes of a change, so they catch storms a forecast model misses. Each airport within 50 km that has reported in the last 90 minutes votes rain or dry, counting more the closer it is, and the forecast for your exact spot votes too, wet if it has rain coming within half an hour. That catches a storm the forecast missed when the airports around agree on it, and leaves out a shower at one distant airport that's heading elsewhere. Rain or snow, and how hard, come from the nearest airport measuring it. With no airport nearby, the forecast decides alone. The settings page shows the last check.
+2. Checks what's falling right now. Three sources vote: weather radar from [RainViewer](https://www.rainviewer.com/) over your exact spot, nearby airports' weather reports from the [Aviation Weather Center](https://aviationweather.gov/data/api/), and the forecast for your spot, which counts as wet if rain is due within half an hour. Radar counts most, since it sees rain where you are within about 10 minutes. Airports count more the closer they are, and they say what kind of weather it is: rain, snow, drizzle, thunder, or fog. That catches a storm the forecast missed, and leaves out a shower at one distant airport that's heading elsewhere. Radar gives how hard it's falling; the nearest airport measuring it, or the forecast, says whether it's rain or snow. Where a country shares no radar, or no airport within 50 km has reported in the last 90 minutes, the others decide without it. The settings page shows the last check.
 3. Works out the season, the sun and moon positions, and the moon's phase on the frame itself.
 4. Checks the painting's website for changed layers, and downloads only those to the memory card.
 5. Decides which layers to show, and how far, from the rules in `scene.txt`.

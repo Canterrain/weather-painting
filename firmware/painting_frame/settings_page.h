@@ -64,6 +64,9 @@ footer { color:var(--muted); font-size:13px; margin-top:24px; text-align:center;
     <button id="saveLocation" type="button">Save city</button>
     <p class="msg" id="locationMsg"></p>
     <p class="note" id="report"></p>
+    <p class="note">Weather from <a href="https://open-meteo.com/">Open-Meteo</a>, airport reports from the
+      <a href="https://aviationweather.gov/">Aviation Weather Center</a>, and radar from
+      <a href="https://www.rainviewer.com/">RainViewer</a>.</p>
   </section>
 
   <section>
@@ -153,8 +156,8 @@ async function refresh() {
     : "On " + state.ssid + (state.ip ? " at " + state.ip : "") + " · Weather for " + (state.location || "(no city yet)");
   $("location").value = $("location").value || state.location;
   $("report").textContent = state.report
-    ? "Rain, snow, thunder, and fog are checked against nearby airports' weather reports. Last check: " + state.report + "."
-    : "No airport reports nearby, so the forecast alone decides whether it's raining or snowing right now.";
+    ? "Rain, snow, thunder, and fog are checked against weather radar and nearby airports' reports. Last check: " + state.report + "."
+    : "No radar or airport reports nearby, so the forecast alone decides whether it's raining or snowing right now.";
   $("autoUpdate").checked = state.autoUpdate;
   $("fwVersion").textContent = "This frame has version " + state.version + ".";
   $("canvasSize").textContent = state.canvas[0] + "×" + state.canvas[1];
