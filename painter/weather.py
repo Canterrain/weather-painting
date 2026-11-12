@@ -27,7 +27,7 @@ GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
 METAR = "https://aviationweather.gov/api/data/metar"
 RAINVIEWER = "https://api.rainviewer.com/public/weather-maps.json"
 HOURLY = ["temperature_2m", "precipitation", "rain", "showers", "snowfall", "snow_depth",
-          "weather_code", "cloud_cover", "wind_speed_10m", "is_day"]
+          "weather_code", "cloud_cover", "wind_speed_10m", "is_day", "et0_fao_evapotranspiration"]
 
 
 def fetch_open_meteo(lat: float, lon: float, timeout: float = 20) -> dict:
@@ -133,6 +133,11 @@ def season_for(month: int, lat: float) -> str:
 
 # --- Accumulation model ------------------------------------------------------
 
+PUDDLE_FULL_MM = 12.0    # deeper than this runs off
+PUDDLE_SOAK = 0.08        # share that soaks in each hour: half a day after a shower
+PUDDLE_EVAPORATE = 3.0    # shallow puddle edges dry faster than open ground
+
+
 def simulate_accumulation(hours: list[dict]) -> dict:
     """Walk the hourly history (oldest first, ending at 'now') and keep a
     running total of ground snow, roof snow and puddle water."""
@@ -155,11 +160,13 @@ def simulate_accumulation(hours: list[dict]) -> dict:
         if t > -1.5:
             roof = max(0.0, roof - (0.2 * (t + 1.5) + 0.06 * rain + (0.08 if sunny else 0)))
 
-        # puddles: rain and snowmelt fill them; they drain and evaporate
+        # puddles: rain and snowmelt fill them, past full it runs off; they
+        # soak in, and evaporate as fast as the weather dries things (sun,
+        # heat, wind and dry air), so a hot sunny afternoon dries a downpour
         if t > 0:
-            puddle += rain + melt * 0.5
-        puddle -= puddle * 0.035 + (0.04 * max(t, 0) / 10 if sunny else 0.0)
-        puddle = min(max(puddle, 0.0), 30.0)
+            puddle = min(puddle + rain + melt * 0.5, PUDDLE_FULL_MM)
+        puddle -= puddle * PUDDLE_SOAK + PUDDLE_EVAPORATE * h.get("drying", 0.0)
+        puddle = max(puddle, 0.0)
 
     return {"snow_model_cm": snow, "roof_model_cm": roof, "puddle_mm": puddle}
 
@@ -183,6 +190,7 @@ def build_state(data: dict, lat: float, lon: float, now: float | None = None) ->
         "snowfall": v("snowfall", i),
         "rain": v("rain", i) + v("showers", i),
         "is_day": bool(v("is_day", i)),
+        "drying": v("et0_fao_evapotranspiration", i),   # mm/h the weather dries
     } for i in range(idx + 1)]
     acc = simulate_accumulation(history)
 

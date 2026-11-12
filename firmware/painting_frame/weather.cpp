@@ -463,11 +463,16 @@ static void blend(const Place &place, double now, double soon_rain, double soon_
 
 static double num(JsonVariant v) { return v.isNull() ? 0.0 : v.as<double>(); }
 
+// puddles (simulate_accumulation in weather.py)
+static const double PUDDLE_FULL_MM = 12.0;   // deeper than this runs off
+static const double PUDDLE_SOAK = 0.08;      // share that soaks in each hour
+static const double PUDDLE_EVAPORATE = 3.0;  // shallow puddle edges dry faster than open ground
+
 bool fetch_state(const Place &place, double now, State &st) {
   String url = String("https://api.open-meteo.com/v1/forecast?latitude=") + String(place.lat, 4) +
                "&longitude=" + String(place.lon, 4) +
                "&hourly=temperature_2m,precipitation,rain,showers,snowfall,snow_depth,weather_code,"
-               "cloud_cover,wind_speed_10m,is_day"
+               "cloud_cover,wind_speed_10m,is_day,et0_fao_evapotranspiration"
                "&current=temperature_2m,precipitation,rain,showers,snowfall,weather_code,cloud_cover,"
                "wind_speed_10m,is_day"
                "&minutely_15=precipitation,snowfall&forecast_minutely_15=3"
@@ -502,9 +507,9 @@ bool fetch_state(const Place &place, double now, State &st) {
     }
     roof += snowfall * 0.9;
     if (t > -1.5) roof = fmax(0.0, roof - (0.2 * (t + 1.5) + 0.06 * rain + (sunny ? 0.08 : 0)));
-    if (t > 0) puddle += rain + melt * 0.5;
-    puddle -= puddle * 0.035 + (sunny ? 0.04 * fmax(t, 0) / 10 : 0.0);
-    puddle = fmin(fmax(puddle, 0.0), 30.0);
+    if (t > 0) puddle = fmin(puddle + rain + melt * 0.5, PUDDLE_FULL_MM);
+    puddle -= puddle * PUDDLE_SOAK + PUDDLE_EVAPORATE * num(hourly["et0_fao_evapotranspiration"][i]);
+    puddle = fmax(puddle, 0.0);
 
     if (i > idx - 24) { rain24 += rain; snow24 += snowfall; }
     if (i > idx - 3) rain3 += rain;
