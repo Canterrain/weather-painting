@@ -6,6 +6,7 @@
 #include <math.h>
 #include <algorithm>
 #include <vector>
+#include <string.h>
 #include <time.h>
 #include "astro.h"
 
@@ -468,6 +469,49 @@ static const double PUDDLE_FULL_MM = 12.0;   // deeper than this runs off
 static const double PUDDLE_SOAK = 0.08;      // share that soaks in each hour
 static const double PUDDLE_EVAPORATE = 3.0;  // shallow puddle edges dry faster than open ground
 
+// What the frame saw falling, hour by hour, so rain and snow the radar and
+// airports caught still fill puddles and cover the ground when the
+// forecast's history missed them. Kept through sleep; a restart loses it,
+// which only means going by the forecast alone for a few days.
+struct SeenHour {
+  double hour_end;   // as the forecast's hourly times: the hour up to here
+  float rain_mm, snow_cm;
+};
+static const int SEEN_HOURS = 72;
+RTC_DATA_ATTR static SeenHour g_seen[SEEN_HOURS];
+RTC_DATA_ATTR static double g_seen_time = 0;             // the last wake counted
+RTC_DATA_ATTR static float g_seen_rain = 0, g_seen_snow = 0;   // its rates
+RTC_DATA_ATTR static float g_seen_lat = 0, g_seen_lon = 0;
+
+static SeenHour *seen_hour(double hour_end, bool make) {
+  SeenHour &s = g_seen[(long)(hour_end / 3600) % SEEN_HOURS];
+  if (s.hour_end != hour_end) {
+    if (!make) return nullptr;
+    s = {hour_end, 0, 0};
+  }
+  return &s;
+}
+
+// Add what fell since the last wake: the average of its rates and these,
+// over the time between. Gaps over an hour aren't guessed at.
+static void tally(const Place &place, double now, double hour_end, double rain, double snow) {
+  if (distance_km(place.lat, place.lon, g_seen_lat, g_seen_lon) > 5) {
+    memset(g_seen, 0, sizeof g_seen);   // a new place: what fell elsewhere doesn't count
+    g_seen_time = 0;
+    g_seen_lat = place.lat;
+    g_seen_lon = place.lon;
+  }
+  double gap_h = (now - g_seen_time) / 3600.0;
+  if (g_seen_time > 0 && gap_h > 0 && gap_h <= 1.0 && (rain + g_seen_rain + snow + g_seen_snow) > 0) {
+    SeenHour *s = seen_hour(hour_end, true);
+    s->rain_mm += (g_seen_rain + rain) / 2 * gap_h;
+    s->snow_cm += (g_seen_snow + snow) / 2 * gap_h;
+  }
+  g_seen_time = now;
+  g_seen_rain = rain;
+  g_seen_snow = snow;
+}
+
 bool fetch_state(const Place &place, double now, State &st) {
   String url = String("https://api.open-meteo.com/v1/forecast?latitude=") + String(place.lat, 4) +
                "&longitude=" + String(place.lon, 4) +
@@ -497,6 +541,10 @@ bool fetch_state(const Place &place, double now, State &st) {
     double t = num(hourly["temperature_2m"][i]);
     double snowfall = num(hourly["snowfall"][i]);
     double rain = num(hourly["rain"][i]) + num(hourly["showers"][i]);
+    if (SeenHour *seen = seen_hour(times[i].as<double>(), false)) {
+      rain = fmax(rain, seen->rain_mm);
+      snowfall = fmax(snowfall, seen->snow_cm);
+    }
     bool sunny = num(hourly["is_day"][i]) != 0;
 
     snow += snowfall;
@@ -513,6 +561,12 @@ bool fetch_state(const Place &place, double now, State &st) {
 
     if (i > idx - 24) { rain24 += rain; snow24 += snowfall; }
     if (i > idx - 3) rain3 += rain;
+  }
+  // and what's been seen so far this hour, which the history doesn't have yet
+  double hour_end = times[idx].as<double>() + 3600;
+  if (SeenHour *seen = seen_hour(hour_end, false)) {
+    if (num(hourly["temperature_2m"][idx]) > 0) puddle = fmin(puddle + seen->rain_mm, PUDDLE_FULL_MM);
+    snow += seen->snow_cm;
   }
 
   double api_snow_cm = num(hourly["snow_depth"][idx]) * 100.0;
@@ -585,5 +639,6 @@ bool fetch_state(const Place &place, double now, State &st) {
   }
   doc.clear();
   blend(place, now, soon_rain, soon_snow, st);
+  tally(place, now, hour_end, st.get("rain_mm_h")->num, st.get("snowfall_cm_h")->num);
   return true;
 }

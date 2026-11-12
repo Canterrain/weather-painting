@@ -140,12 +140,16 @@ PUDDLE_EVAPORATE = 3.0    # shallow puddle edges dry faster than open ground
 
 def simulate_accumulation(hours: list[dict]) -> dict:
     """Walk the hourly history (oldest first, ending at 'now') and keep a
-    running total of ground snow, roof snow and puddle water."""
+    running total of ground snow, roof snow and puddle water. The frame also
+    counts rain and snow it saw itself between wakes ('seen_rain' and
+    'seen_snow', when there are any), in case the forecast missed them."""
     snow = roof = puddle = 0.0
     for h in hours:
         t = h["temp"]
         snowfall = h["snowfall"]            # cm this hour
         rain = h["rain"]                    # mm this hour (rain + showers)
+        rain = max(rain, h.get("seen_rain", 0.0))
+        snowfall = max(snowfall, h.get("seen_snow", 0.0))
         sunny = h["is_day"]
 
         # ground snow: builds from snowfall, melts above freezing (faster in rain)
