@@ -373,8 +373,6 @@ def blend(state: dict, near: list[dict], soon: tuple[float, float]) -> dict:
         else:   # only the forecast has it
             rain = max(state["rain_mm_h"], soon_rain)
             snow = max(state["snowfall_cm_h"], soon_snow)
-            if state["temp_c"] <= 0.5 and rain and not snow:
-                rain, snow = 0.0, rain / 4   # near freezing it comes down as snow
             drizzle_only = state["condition"] == "drizzle"
             freezing = state["condition"] == "freezing_rain"
     thunder = state["is_stormy"] or any(r["wx"]["thunder"] and r["km"] <= THUNDER_KM for r in near)

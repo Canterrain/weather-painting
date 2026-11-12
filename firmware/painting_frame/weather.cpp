@@ -282,7 +282,6 @@ static void blend(const Place &place, double now, double soon_rain, double soon_
     } else {   // only the forecast has it
       rain = fmax(n("rain_mm_h"), soon_rain);
       snow = fmax(n("snowfall_cm_h"), soon_snow);
-      if (n("temp_c") <= 0.5 && rain > 0 && snow == 0) { snow = rain / 4; rain = 0; }   // near freezing it's snow
       drizzle_only = fcond == "drizzle";
       freezing = fcond == "freezing_rain";
     }
