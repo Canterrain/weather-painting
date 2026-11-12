@@ -1,9 +1,11 @@
 """Fetch weather from Open-Meteo (free, no API key) and turn it into a
 "world state": a flat dict of values the scene's layer rules can read.
 
-What's falling right now comes from the nearest airport's weather report
-when one is close by (see observe()), since a forecast model can lag a
-passing storm by half an hour or more and rarely knows about thunder.
+What's falling right now is decided by blend(): nearby airports' weather
+reports, which say what's actually happening, vote together with the
+forecast for this exact spot, which knows whether a storm is coming or
+going. A forecast alone can lag a storm by half an hour and rarely knows
+about thunder; an airport alone can be 30 km from the window.
 
 Things that build up over time (snow on the ground, snow on the roof,
 puddles) are simulated hour by hour over the last 3 days, so the painting
@@ -34,6 +36,8 @@ def fetch_open_meteo(lat: float, lon: float, timeout: float = 20) -> dict:
         "longitude": lon,
         "hourly": ",".join(HOURLY),
         "current": "temperature_2m,precipitation,rain,showers,snowfall,weather_code,cloud_cover,wind_speed_10m,is_day",
+        "minutely_15": "precipitation,snowfall",
+        "forecast_minutely_15": 3,     # now and the next half hour
         "past_days": 3,
         "forecast_days": 1,
         "timezone": "auto",
@@ -266,25 +270,6 @@ def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 6371.0 * 2 * math.asin(math.sqrt(a))
 
 
-def nearest_report(reports: list[dict], lat: float, lon: float, now: float) -> dict | None:
-    """The newest report from the closest airport that has reported recently."""
-    best = None
-    for r in reports:
-        if r.get("lat") is None or r.get("obsTime") is None:
-            continue
-        if now - r["obsTime"] > REPORT_MAX_AGE * 60:
-            continue
-        if " AO1" in (r.get("rawOb") or ""):
-            continue   # an automatic station with no precipitation sensor
-        km = distance_km(lat, lon, r["lat"], r["lon"])
-        if km > REPORT_KM:
-            continue
-        key = (round(km, 1), -r["obsTime"])
-        if best is None or key < best[0]:
-            best = (key, dict(r, km=km))
-    return best[1] if best else None
-
-
 def read_weather(wx: str) -> dict:
     """A report's weather groups ('-TSRA BR', 'VCSH', '+SN FZFG') -> what's
     happening: rain and snow rates, thunder, fog."""
@@ -314,33 +299,109 @@ def read_weather(wx: str) -> dict:
     return out
 
 
-def observe(state: dict, report: dict | None) -> dict:
-    """Replace the forecast's 'right now' with what the airport reports."""
-    if report is None:
+def stations(reports: list[dict], lat: float, lon: float, now: float) -> list[dict]:
+    """The latest recent report from each airport within REPORT_KM that can
+    sense rain, nearest first, each with its distance and what it says."""
+    latest = {}
+    for r in reports:
+        if r.get("lat") is None or r.get("obsTime") is None:
+            continue
+        if now - r["obsTime"] > REPORT_MAX_AGE * 60:
+            continue
+        if " AO1" in (r.get("rawOb") or ""):
+            continue   # an automatic station with no precipitation sensor
+        km = distance_km(lat, lon, r["lat"], r["lon"])
+        if km > REPORT_KM:
+            continue
+        old = latest.get(r["icaoId"])
+        if old is None or r["obsTime"] > old["obsTime"]:
+            latest[r["icaoId"]] = dict(r, km=km, wx=read_weather(r.get("wxString")))
+    return sorted(latest.values(), key=lambda r: r["km"])
+
+
+def model_soon(data: dict, now: float) -> tuple[float, float]:
+    """The forecast's heaviest rain (mm/h) and snow (cm/h) here from now
+    through the next half hour, from its 15-minute steps."""
+    m = data.get("minutely_15") or {}
+    rain = snow = 0.0
+    for i, t in enumerate(m.get("time") or []):
+        if now - 900 <= t <= now + 1800:
+            rain = max(rain, (m["precipitation"][i] or 0) * 4)
+            snow = max(snow, (m["snowfall"][i] or 0) * 4)
+    return rain, snow
+
+
+def station_weight(km: float) -> float:
+    """How much an airport's vote counts: the same as the forecast's at
+    12 km, a third of it at 25 km."""
+    return 1.0 / (1.0 + (km / 12.0) ** 2)
+
+
+FORECAST_WEIGHT = 0.5
+THUNDER_KM = 30        # thunder is heard this far, and means storm clouds overhead
+FOG_KM = 25            # fog is local: farther airports don't count
+
+
+def blend(state: dict, near: list[dict], soon: tuple[float, float]) -> dict:
+    """Decide what's falling right now from the airports' reports and the
+    forecast for this spot.
+
+    Rain or not is a vote: each airport counts more the closer it is, and the
+    forecast votes for this exact spot, wet if it has rain or snow now or
+    within half an hour. A storm the forecast missed is caught when the
+    airports around agree on it; a shower at one airport 25 km away that the
+    forecast says won't reach here is left out. What kind and how hard comes
+    from the nearest airport measuring it."""
+    if not near:
         return state
-    w = read_weather(report.get("wxString"))
-    rain, snow = w["rain_mm_h"], w["snowfall_cm_h"]
-    if w["thunder"]:
+    soon_rain, soon_snow = soon
+    forecast_wet = state["is_raining"] or state["is_snowing"] or soon_rain > 0.2 or soon_snow > 0.1
+    vote = FORECAST_WEIGHT if forecast_wet else -FORECAST_WEIGHT
+    for r in near:
+        w = r["wx"]
+        vote += station_weight(r["km"]) * (1 if w["rain_mm_h"] or w["snowfall_cm_h"] else -1)
+    falling = vote > 0
+
+    rain = snow = 0.0
+    freezing, drizzle_only = False, True
+    if falling:
+        measured = next((r for r in near if r["wx"]["rain_mm_h"] or r["wx"]["snowfall_cm_h"]), None)
+        if measured:
+            w = measured["wx"]
+            rain, snow = w["rain_mm_h"], w["snowfall_cm_h"]
+            freezing, drizzle_only = w["freezing"], w["drizzle_only"]
+        else:   # only the forecast has it
+            rain = max(state["rain_mm_h"], soon_rain)
+            snow = max(state["snowfall_cm_h"], soon_snow)
+            if state["temp_c"] <= 0.5 and rain and not snow:
+                rain, snow = 0.0, rain / 4   # near freezing it comes down as snow
+            drizzle_only = state["condition"] == "drizzle"
+            freezing = state["condition"] == "freezing_rain"
+    thunder = state["is_stormy"] or any(r["wx"]["thunder"] and r["km"] <= THUNDER_KM for r in near)
+    fog_airport = next((r for r in near if r["km"] <= FOG_KM), None)
+    fog = fog_airport["wx"]["fog"] if fog_airport else state["is_foggy"]
+
+    if thunder:
         cond = "thunderstorm"
     elif snow:
         cond = "snow"
     elif rain:
-        cond = "freezing_rain" if w["freezing"] else "drizzle" if w["drizzle_only"] else "rain"
-    elif w["fog"]:
+        cond = "freezing_rain" if freezing else "drizzle" if drizzle_only else "rain"
+    elif fog:
         cond = "fog"
     else:
         cond = "overcast" if state["cloud_cover"] >= 70 else "clear"
     s = dict(state)
     s.update({
         "condition": cond,
-        "rain_mm_h": rain,
-        "snowfall_cm_h": snow,
+        "rain_mm_h": round(rain, 2),
+        "snowfall_cm_h": round(snow, 2),
         "is_raining": rain > 0,
         "is_snowing": snow > 0,
-        "is_foggy": w["fog"],
-        "is_stormy": w["thunder"],
-        "report": f"{report.get('icaoId')} {report.get('wxString') or 'no weather'}, "
-                  f"{report['km']:.0f} km away",
+        "is_foggy": fog,
+        "is_stormy": thunder,
+        "report": "; ".join(f"{r['icaoId']} {r['km']:.0f} km: {r.get('wxString') or 'dry'}" for r in near[:3])
+                  + f"; forecast: {'wet' if forecast_wet else 'dry'}",
     })
     return s
 

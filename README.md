@@ -8,7 +8,7 @@ Built for the Seeed Studio reTerminal E1004, a 13.3" color e-paper frame. The pa
 
 ## ✨ Features
 
-- Live weather for your city, with no account or API key, checked against the nearest airport's weather report so rain, snow, and thunderstorms show up as they happen
+- Live weather for your city, with no account or API key, checked against nearby airports' weather reports so rain, snow, and thunderstorms show up as they happen
 - A tree for every season: spring, summer, fall, and winter
 - Falling snow in three strengths, and snow that stays on the branches and ground after it stops
 - Light and heavy rain

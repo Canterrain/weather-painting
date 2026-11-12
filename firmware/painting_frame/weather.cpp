@@ -3,13 +3,15 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <math.h>
+#include <algorithm>
+#include <vector>
 #include <time.h>
 #include "astro.h"
 
 #define LOG Serial1
 
 // the airport report last used, for the settings page (kept through sleep)
-RTC_DATA_ATTR static char g_report[80] = "";
+RTC_DATA_ATTR static char g_report[160] = "";
 const char *last_report() { return g_report; }
 
 // Python's round(x, ndigits) rounds half to even; rint() does the same.
@@ -143,9 +145,10 @@ static const char *time_phase(double sun_alt, int local_hour) {
 }
 
 // --- airport weather reports (METAR) ----------------------------------------
-// What's falling right now comes from the nearest airport's report when one
-// is close by: a forecast model can lag a passing storm by half an hour and
-// rarely knows about thunder. A port of observe() in painter/weather.py.
+// What's falling right now is decided by blend(): nearby airports' reports,
+// which say what's actually happening, vote together with the forecast for
+// this exact spot, which knows whether a storm is coming or going. A port of
+// blend() in painter/weather.py.
 
 static const double REPORT_KM = 50;          // farthest airport worth believing
 static const double REPORT_MAX_AGE = 90;     // minutes before a report is too old
@@ -191,25 +194,37 @@ static Observed read_weather(const String &wx) {
 }
 
 
-static void observe(const Place &place, double now, State &st) {
+struct Station {
+  String id, wx;
+  double km = 0, time = 0;
+  Observed o;
+};
+
+// How much an airport's vote counts: the same as the forecast's at 12 km,
+// a third of it at 25 km.
+static double station_weight(double km) { return 1.0 / (1.0 + pow(km / 12.0, 2)); }
+
+static const double FORECAST_WEIGHT = 0.5;
+static const double THUNDER_KM = 30;   // thunder is heard this far, and means storm clouds overhead
+static const double FOG_KM = 25;       // fog is local: farther airports don't count
+
+// The latest recent report from each airport within REPORT_KM that can sense
+// rain, nearest first.
+static std::vector<Station> stations(const Place &place, double now) {
+  std::vector<Station> out;
   double dlat = REPORT_KM / 111.0, dlon = dlat / fmax(cos(place.lat * M_PI / 180), 0.1);
   char box[96];
   snprintf(box, sizeof box, "%.2f,%.2f,%.2f,%.2f", place.lat - dlat, place.lon - dlon, place.lat + dlat, place.lon + dlon);
   String body;
   if (!https_get(String("https://aviationweather.gov/api/data/metar?format=json&hours=2&bbox=") + box, body) ||
-      !body.length()) {
-    LOG.println("[weather] no airport report nearby; using the forecast");
-    g_report[0] = 0;
-    return;
-  }
+      !body.length())
+    return out;
   JsonDocument filter;
   for (const char *k : {"icaoId", "obsTime", "lat", "lon", "wxString", "rawOb"}) filter[0][k] = true;
   JsonDocument doc;
-  if (deserializeJson(doc, body, DeserializationOption::Filter(filter))) { g_report[0] = 0; return; }
+  if (deserializeJson(doc, body, DeserializationOption::Filter(filter))) return out;
   body = String();
 
-  JsonObject best;
-  double best_km = 1e9, best_time = 0;
   for (JsonObject r : doc.as<JsonArray>()) {
     if (r["lat"].isNull() || r["obsTime"].isNull()) continue;
     double t = r["obsTime"].as<double>();
@@ -217,34 +232,85 @@ static void observe(const Place &place, double now, State &st) {
     if (strstr(r["rawOb"] | "", " AO1")) continue;   // an automatic station with no precipitation sensor
     double km = distance_km(place.lat, place.lon, r["lat"].as<double>(), r["lon"].as<double>());
     if (km > REPORT_KM) continue;
-    km = rint(km * 10) / 10;
-    if (km < best_km || (km == best_km && t > best_time)) { best = r; best_km = km; best_time = t; }
+    String id = r["icaoId"] | "?";
+    Station *same = nullptr;
+    for (auto &s : out) if (s.id == id) same = &s;
+    if (same && same->time >= t) continue;
+    Station s;
+    s.id = id;
+    s.wx = (const char *)(r["wxString"] | "");
+    s.km = km;
+    s.time = t;
+    s.o = read_weather(s.wx);
+    if (same) *same = s;
+    else out.push_back(s);
   }
-  if (best.isNull()) {
+  std::sort(out.begin(), out.end(), [](const Station &a, const Station &b) { return a.km < b.km; });
+  return out;
+}
+
+// Rain or not is a vote: each airport counts more the closer it is, and the
+// forecast votes for this exact spot, wet if it has rain or snow now or within
+// half an hour (soon_rain, soon_snow). A storm the forecast missed is caught
+// when the airports around agree on it; a shower at one airport 25 km away
+// that the forecast says won't reach here is left out. What kind and how hard
+// comes from the nearest airport measuring it.
+static void blend(const Place &place, double now, double soon_rain, double soon_snow, State &st) {
+  std::vector<Station> near = stations(place, now);
+  if (near.empty()) {
     LOG.println("[weather] no recent airport report within 50 km; using the forecast");
     g_report[0] = 0;
     return;
   }
+  auto n = [&](const char *k) { return st.get(k)->num; };
+  String fcond = st.get("condition")->text;
+  bool forecast_wet = n("is_raining") || n("is_snowing") || soon_rain > 0.2 || soon_snow > 0.1;
+  double vote = forecast_wet ? FORECAST_WEIGHT : -FORECAST_WEIGHT;
+  for (auto &s : near) vote += station_weight(s.km) * (s.o.rain > 0 || s.o.snow > 0 ? 1 : -1);
+  bool falling = vote > 0;
 
-  String wx = best["wxString"] | "";
-  Observed o = read_weather(wx);
+  double rain = 0, snow = 0;
+  bool freezing = false, drizzle_only = true;
+  if (falling) {
+    const Station *measured = nullptr;
+    for (auto &s : near) if (s.o.rain > 0 || s.o.snow > 0) { measured = &s; break; }
+    if (measured) {
+      rain = measured->o.rain;
+      snow = measured->o.snow;
+      freezing = measured->o.freezing;
+      drizzle_only = measured->o.drizzle_only;
+    } else {   // only the forecast has it
+      rain = fmax(n("rain_mm_h"), soon_rain);
+      snow = fmax(n("snowfall_cm_h"), soon_snow);
+      if (n("temp_c") <= 0.5 && rain > 0 && snow == 0) { snow = rain / 4; rain = 0; }   // near freezing it's snow
+      drizzle_only = fcond == "drizzle";
+      freezing = fcond == "freezing_rain";
+    }
+  }
+  bool thunder = n("is_stormy") != 0;
+  for (auto &s : near) if (s.o.thunder && s.km <= THUNDER_KM) thunder = true;
+  bool fog = near[0].km <= FOG_KM ? near[0].o.fog : n("is_foggy") != 0;
+
   const char *cond;
-  if (o.thunder) cond = "thunderstorm";
-  else if (o.snow > 0) cond = "snow";
-  else if (o.rain > 0) cond = o.freezing ? "freezing_rain" : o.drizzle_only ? "drizzle" : "rain";
-  else if (o.fog) cond = "fog";
-  else cond = st.get("cloud_cover")->num >= 70 ? "overcast" : "clear";
+  if (thunder) cond = "thunderstorm";
+  else if (snow > 0) cond = "snow";
+  else if (rain > 0) cond = freezing ? "freezing_rain" : drizzle_only ? "drizzle" : "rain";
+  else if (fog) cond = "fog";
+  else cond = n("cloud_cover") >= 70 ? "overcast" : "clear";
   st.set("condition", cond);
-  st.set("rain_mm_h", o.rain);
-  st.set("snowfall_cm_h", o.snow);
-  st.set("is_raining", o.rain > 0);
-  st.set("is_snowing", o.snow > 0);
-  st.set("is_foggy", o.fog);
-  st.set("is_stormy", o.thunder);
+  st.set("rain_mm_h", pyround(rain, 2));
+  st.set("snowfall_cm_h", pyround(snow, 2));
+  st.set("is_raining", rain > 0);
+  st.set("is_snowing", snow > 0);
+  st.set("is_foggy", fog);
+  st.set("is_stormy", thunder);
 
-  snprintf(g_report, sizeof g_report, "%s, %.0f km away: %s (%.0f min ago)", (const char *)(best["icaoId"] | "?"),
-           best_km, wx.length() ? wx.c_str() : "no weather", (now - best_time) / 60);
-  LOG.printf("[weather] airport %s\n", g_report);
+  String r;
+  for (size_t i = 0; i < near.size() && i < 3; ++i)
+    r += near[i].id + " " + String((int)lrint(near[i].km)) + " km: " + (near[i].wx.length() ? near[i].wx : "dry") + "; ";
+  r += String("forecast: ") + (forecast_wet ? "wet" : "dry");
+  strlcpy(g_report, r.c_str(), sizeof g_report);
+  LOG.printf("[weather] airports %s -> %s\n", g_report, cond);
 }
 
 static double num(JsonVariant v) { return v.isNull() ? 0.0 : v.as<double>(); }
@@ -256,6 +322,7 @@ bool fetch_state(const Place &place, double now, State &st) {
                "cloud_cover,wind_speed_10m,is_day"
                "&current=temperature_2m,precipitation,rain,showers,snowfall,weather_code,cloud_cover,"
                "wind_speed_10m,is_day"
+               "&minutely_15=precipitation,snowfall&forecast_minutely_15=3"
                "&past_days=3&forecast_days=1&timezone=auto&timeformat=unixtime";
   String body;
   if (!https_get(url, body)) return false;
@@ -352,6 +419,18 @@ bool fetch_state(const Place &place, double now, State &st) {
   st.set("snow_last_24h_cm", pyround(snow24, 1));
   st.set("ground_wet", rain3 > 0.2);
   st.set("stars_visible", is_night && cloud_i < 40);
-  observe(place, now, st);
+  // the forecast's heaviest rain and snow here from now through the next half
+  // hour, from its 15-minute steps
+  double soon_rain = 0, soon_snow = 0;
+  JsonObject m15 = doc["minutely_15"];
+  JsonArray m_times = m15["time"];
+  for (size_t i = 0; i < m_times.size(); ++i) {
+    double t = m_times[i].as<double>();
+    if (t < now - 900 || t > now + 1800) continue;
+    soon_rain = fmax(soon_rain, num(m15["precipitation"][i]) * 4);
+    soon_snow = fmax(soon_snow, num(m15["snowfall"][i]) * 4);
+  }
+  doc.clear();
+  blend(place, now, soon_rain, soon_snow, st);
   return true;
 }

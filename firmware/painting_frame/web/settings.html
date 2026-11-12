@@ -150,8 +150,8 @@ async function refresh() {
     : "On " + state.ssid + (state.ip ? " at " + state.ip : "") + " · Weather for " + (state.location || "(no city yet)");
   $("location").value = $("location").value || state.location;
   $("report").textContent = state.report
-    ? "Rain, snow, thunder, and fog right now come from the nearest airport's weather report: " + state.report + "."
-    : "No airport reports nearby, so the forecast decides whether it's raining or snowing right now.";
+    ? "Rain, snow, thunder, and fog are checked against nearby airports' weather reports. Last check: " + state.report + "."
+    : "No airport reports nearby, so the forecast alone decides whether it's raining or snowing right now.";
   $("autoUpdate").checked = state.autoUpdate;
   $("fwVersion").textContent = "This frame has version " + state.version + ".";
   $("canvasSize").textContent = state.canvas[0] + "×" + state.canvas[1];
