@@ -193,8 +193,10 @@ bool fetch_state(const Place &place, double now, State &st) {
   int code = cur["weather_code"].isNull() ? (int)num(hourly["weather_code"][idx]) : cur["weather_code"].as<int>();
   const char *cond = condition_for(code);
   double temp = cur["temperature_2m"].isNull() ? num(hourly["temperature_2m"][idx]) : num(cur["temperature_2m"]);
-  double rain_now = num(cur["rain"]) + num(cur["showers"]);
-  double snow_now = num(cur["snowfall"]);
+  // "current" amounts are totals over its interval (15 minutes), not per hour
+  double per_hour = 3600.0 / (num(cur["interval"]) > 0 ? num(cur["interval"]) : 3600.0);
+  double rain_now = (num(cur["rain"]) + num(cur["showers"])) * per_hour;
+  double snow_now = num(cur["snowfall"]) * per_hour;
   double cloud = cur["cloud_cover"].isNull() ? num(hourly["cloud_cover"][idx]) : num(cur["cloud_cover"]);
   double wind = cur["wind_speed_10m"].isNull() ? num(hourly["wind_speed_10m"][idx]) : num(cur["wind_speed_10m"]);
 

@@ -184,8 +184,10 @@ def build_state(data: dict, lat: float, lon: float, now: float | None = None) ->
     code = int(cur.get("weather_code", v("weather_code", idx)))
     cond = condition_for(code)
     temp = cur.get("temperature_2m", v("temperature_2m", idx))
-    rain_now = (cur.get("rain") or 0) + (cur.get("showers") or 0)
-    snow_now = cur.get("snowfall") or 0.0
+    # "current" amounts are totals over its interval (15 minutes), not per hour
+    per_hour = 3600 / (cur.get("interval") or 3600)
+    rain_now = ((cur.get("rain") or 0) + (cur.get("showers") or 0)) * per_hour
+    snow_now = (cur.get("snowfall") or 0.0) * per_hour
     cloud = cur.get("cloud_cover", v("cloud_cover", idx))
     last24 = history[-24:]
 
