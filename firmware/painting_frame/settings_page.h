@@ -63,6 +63,7 @@ footer { color:var(--muted); font-size:13px; margin-top:24px; text-align:center;
     <p class="note">City, then state or region, then country, separated by commas.</p>
     <button id="saveLocation" type="button">Save city</button>
     <p class="msg" id="locationMsg"></p>
+    <p class="note" id="report"></p>
   </section>
 
   <section>
@@ -151,6 +152,9 @@ async function refresh() {
     ? (state.online ? "Connected to " + state.ssid + ". Finish below, then close settings." : "Setting up. Start with your Wi-Fi.")
     : "On " + state.ssid + (state.ip ? " at " + state.ip : "") + " · Weather for " + (state.location || "(no city yet)");
   $("location").value = $("location").value || state.location;
+  $("report").textContent = state.report
+    ? "Rain, snow, thunder, and fog right now come from the nearest airport's weather report: " + state.report + "."
+    : "No airport reports nearby, so the forecast decides whether it's raining or snowing right now.";
   $("autoUpdate").checked = state.autoUpdate;
   $("fwVersion").textContent = "This frame has version " + state.version + ".";
   $("canvasSize").textContent = state.canvas[0] + "×" + state.canvas[1];

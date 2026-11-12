@@ -91,6 +91,7 @@ static void handle_state() {
   j += "\"ip\":" + q(online ? WiFi.localIP().toString() : "") + ",";
   j += "\"ssid\":" + q(cfg->ssid) + ",";
   j += "\"location\":" + q(cfg->location) + ",";
+  j += "\"report\":" + q(last_report()) + ",";
   j += "\"source\":" + String(cfg->source) + ",";
   j += "\"siteUrl\":" + q(cfg->site_url) + ",";
   j += "\"defaultSite\":" + q(DEFAULT_SITE_URL) + ",";

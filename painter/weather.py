@@ -1,6 +1,10 @@
 """Fetch weather from Open-Meteo (free, no API key) and turn it into a
 "world state": a flat dict of values the scene's layer rules can read.
 
+What's falling right now comes from the nearest airport's weather report
+when one is close by (see observe()), since a forecast model can lag a
+passing storm by half an hour or more and rarely knows about thunder.
+
 Things that build up over time (snow on the ground, snow on the roof,
 puddles) are simulated hour by hour over the last 3 days, so the painting
 changes gradually instead of flipping on and off with the current reading.
@@ -9,6 +13,7 @@ changes gradually instead of flipping on and off with the current reading.
 from __future__ import annotations
 
 import json
+import math
 import time
 import urllib.parse
 import urllib.request
@@ -18,6 +23,7 @@ from . import astro
 
 OPEN_METEO = "https://api.open-meteo.com/v1/forecast"
 GEOCODING = "https://geocoding-api.open-meteo.com/v1/search"
+METAR = "https://aviationweather.gov/api/data/metar"
 HOURLY = ["temperature_2m", "precipitation", "rain", "showers", "snowfall", "snow_depth",
           "weather_code", "cloud_cover", "wind_speed_10m", "is_day"]
 
@@ -226,6 +232,117 @@ def build_state(data: dict, lat: float, lon: float, now: float | None = None) ->
     }
     state["stars_visible"] = state["is_night"] and state["cloud_cover"] < 40
     return state
+
+
+# --- airport weather reports (METAR) ----------------------------------------
+# Airports worldwide report what's happening every hour, and again within
+# minutes when it changes, including thunder from lightning detectors. The
+# US aviation weather service publishes all of them, free and without a key.
+
+REPORT_KM = 50          # farthest airport worth believing
+REPORT_MAX_AGE = 90     # minutes before a report is too old to use
+
+# rain and snow rates for light (-), moderate and heavy (+) reports
+RAIN_MM_H = {"-": 1.0, "": 4.0, "+": 10.0}
+DRIZZLE_MM_H = {"-": 0.2, "": 0.5, "+": 1.0}
+SNOW_CM_H = {"-": 0.3, "": 1.2, "+": 3.0}
+
+
+def fetch_reports(lat: float, lon: float, timeout: float = 15) -> list[dict]:
+    """The last two hours of reports from airports in a box around a place."""
+    dlat = REPORT_KM / 111.0
+    dlon = dlat / max(math.cos(math.radians(lat)), 0.1)
+    box = f"{lat - dlat:.2f},{lon - dlon:.2f},{lat + dlat:.2f},{lon + dlon:.2f}"
+    url = METAR + "?" + urllib.parse.urlencode({"bbox": box, "format": "json", "hours": 2})
+    with urllib.request.urlopen(url, timeout=timeout) as r:
+        body = r.read()
+    return json.loads(body) if body.strip() else []
+
+
+def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    a = (math.sin((p2 - p1) / 2) ** 2
+         + math.cos(p1) * math.cos(p2) * math.sin(math.radians(lon2 - lon1) / 2) ** 2)
+    return 6371.0 * 2 * math.asin(math.sqrt(a))
+
+
+def nearest_report(reports: list[dict], lat: float, lon: float, now: float) -> dict | None:
+    """The newest report from the closest airport that has reported recently."""
+    best = None
+    for r in reports:
+        if r.get("lat") is None or r.get("obsTime") is None:
+            continue
+        if now - r["obsTime"] > REPORT_MAX_AGE * 60:
+            continue
+        if " AO1" in (r.get("rawOb") or ""):
+            continue   # an automatic station with no precipitation sensor
+        km = distance_km(lat, lon, r["lat"], r["lon"])
+        if km > REPORT_KM:
+            continue
+        key = (round(km, 1), -r["obsTime"])
+        if best is None or key < best[0]:
+            best = (key, dict(r, km=km))
+    return best[1] if best else None
+
+
+def read_weather(wx: str) -> dict:
+    """A report's weather groups ('-TSRA BR', 'VCSH', '+SN FZFG') -> what's
+    happening: rain and snow rates, thunder, fog."""
+    out = {"rain_mm_h": 0.0, "snowfall_cm_h": 0.0, "thunder": False, "fog": False,
+           "freezing": False, "drizzle_only": True}
+    for group in (wx or "").split():
+        intensity = group[0] if group[0] in "+-" else ""
+        group = group.lstrip("+-")
+        nearby = group.startswith("VC")   # within 10 miles, not here
+        codes = [group[i:i + 2] for i in range(2 if nearby else 0, len(group), 2)]
+        if "TS" in codes:
+            out["thunder"] = True         # thunder nearby is still heard
+        if nearby:
+            continue
+        if "FZ" in codes:
+            out["freezing"] = True
+        for c in codes:
+            if c in ("RA", "UP", "GR", "GS"):
+                out["rain_mm_h"] = max(out["rain_mm_h"], RAIN_MM_H[intensity])
+                out["drizzle_only"] = False
+            elif c == "DZ":
+                out["rain_mm_h"] = max(out["rain_mm_h"], DRIZZLE_MM_H[intensity])
+            elif c in ("SN", "SG", "PL", "IC"):
+                out["snowfall_cm_h"] = max(out["snowfall_cm_h"], SNOW_CM_H[intensity])
+            elif c == "FG":
+                out["fog"] = True
+    return out
+
+
+def observe(state: dict, report: dict | None) -> dict:
+    """Replace the forecast's 'right now' with what the airport reports."""
+    if report is None:
+        return state
+    w = read_weather(report.get("wxString"))
+    rain, snow = w["rain_mm_h"], w["snowfall_cm_h"]
+    if w["thunder"]:
+        cond = "thunderstorm"
+    elif snow:
+        cond = "snow"
+    elif rain:
+        cond = "freezing_rain" if w["freezing"] else "drizzle" if w["drizzle_only"] else "rain"
+    elif w["fog"]:
+        cond = "fog"
+    else:
+        cond = "overcast" if state["cloud_cover"] >= 70 else "clear"
+    s = dict(state)
+    s.update({
+        "condition": cond,
+        "rain_mm_h": rain,
+        "snowfall_cm_h": snow,
+        "is_raining": rain > 0,
+        "is_snowing": snow > 0,
+        "is_foggy": w["fog"],
+        "is_stormy": w["thunder"],
+        "report": f"{report.get('icaoId')} {report.get('wxString') or 'no weather'}, "
+                  f"{report['km']:.0f} km away",
+    })
+    return s
 
 
 # A calm, clear midday used as the base for offline scenarios.

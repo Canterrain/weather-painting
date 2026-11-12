@@ -64,11 +64,12 @@ The command checks every rule in the standard layout against the demo combinatio
 The frame does everything itself; no computer or server is involved once it's set up. Each time it wakes, it:
 
 1. Connects to Wi-Fi and gets the weather for your city from [Open-Meteo](https://open-meteo.com/).
-2. Works out the season, the sun and moon positions, and the moon's phase on the frame itself.
-3. Checks the painting's website for changed layers, and downloads only those to the memory card.
-4. Decides which layers to show, and how far, from the rules in `scene.txt`.
-5. Composes the layers row by row and dithers them to the screen's six inks.
-6. Redraws the screen only if the result changed, then sleeps.
+2. Checks the nearest airport's weather report, from the [Aviation Weather Center](https://aviationweather.gov/data/api/), for what's falling right now: rain, snow, drizzle, thunder, or fog. Airports report at least hourly and again within minutes of a change, so this catches a storm a forecast model can miss for half an hour. It uses an airport within 50 km that has reported in the last 90 minutes, and Open-Meteo's forecast when there isn't one. The settings page shows which airport the frame used.
+3. Works out the season, the sun and moon positions, and the moon's phase on the frame itself.
+4. Checks the painting's website for changed layers, and downloads only those to the memory card.
+5. Decides which layers to show, and how far, from the rules in `scene.txt`.
+6. Composes the layers row by row and dithers them to the screen's six inks.
+7. Redraws the screen only if the result changed, then sleeps.
 
 `wp_compose.c` is the compositor. The painter tools on a computer run the same file, so a preview there matches the screen pixel for pixel.
 
@@ -76,7 +77,7 @@ The frame does everything itself; no computer or server is involved once it's se
 | --- | --- |
 | `painting_frame.ino` | Startup, buttons, the demo, and sleep |
 | `settings.*`, `portal.*`, `web/` | Saved settings and the settings page |
-| `weather.*`, `astro.*`, `state.h` | Weather, sun, moon, and season |
+| `weather.*`, `astro.*`, `state.h` | Weather, airport reports, sun, moon, and season |
 | `sync.*`, `rules.*`, `render.*`, `wp_compose.*` | Downloading, choosing, and composing layers |
 | `text.*`, `screens.*` | Setup and problem screens, and demo captions |
 | `ota.*`, `version.h` | Updates over Wi-Fi |
