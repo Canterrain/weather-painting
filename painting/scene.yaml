@@ -2,10 +2,10 @@
 #
 # These layer names are the ones the frame's settings page expects when you
 # upload your own painting (guides/painting.md). Bottom to top: sky, sun,
-# ground and tree (one of each per season), snow on the branches, fog,
-# falling snow, rain, night, moon. Every layer except sky_clear and
-# ground_summer is optional: a missing file is skipped, so a painting works
-# from day one and gains detail as layers are added.
+# ground (one per season), puddles, tree (one per season), fallen leaves,
+# snow on the branches, fog, falling snow, rain, night, moon. Every layer
+# except sky_clear and ground_summer is optional: a missing file is skipped,
+# so a painting works from day one and gains detail as layers are added.
 #
 # The paintings in layers/ are © Julia Hendrickson, CC BY-NC-ND 4.0 (LICENSE).
 
@@ -49,6 +49,17 @@ layers:
     when: "season == 'winter' or snow_depth_cm >= 1"
     optional: true
 
+  # ---------------- puddles, under the tree ----------------
+  # They come with the rain and stay until the ground dries, unless frozen
+  # or snowed over.
+  - id: puddles
+    amount: "max(ramp(puddle_mm, 0, 10), ramp(rain_mm_h, 0, 6))"
+    when: "(is_raining or puddle_mm >= 1) and snow_depth_cm < 1 and not puddles_frozen"
+    optional: true
+    stages:
+      - {at: 0.0, file: layers/puddles_light.png}
+      - {at: 0.5, file: layers/puddles_heavy.png}
+
   # ---------------- tree (one per season) ----------------
   - id: tree_spring
     file: layers/tree_spring.png
@@ -61,6 +72,11 @@ layers:
   - id: tree_fall
     file: layers/tree_fall.png
     when: "season == 'autumn'"
+    optional: true
+  # The fallen leaves, hidden while there are puddles: they'd land on them.
+  - id: leaves_fall
+    file: layers/leaves_fall.png
+    when: "season == 'autumn' and not ((is_raining or puddle_mm >= 1) and snow_depth_cm < 1 and not puddles_frozen)"
     optional: true
   - id: tree_winter
     file: layers/tree_winter.png
@@ -90,7 +106,7 @@ layers:
       - {at: 0.4, file: layers/snowfall_heavy.png}
       - {at: 0.8, file: layers/snowfall_blizzard.png}
 
-  # ---------------- rain, with its puddles ----------------
+  # ---------------- falling rain ----------------
   # Heavy rain from 3 mm an hour.
   - id: rain
     amount: "ramp(rain_mm_h, 0, 6)"

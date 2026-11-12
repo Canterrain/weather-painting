@@ -1,14 +1,17 @@
-WPM1 08e9abdad9c2
-file scene.txt 2829 c6d24d881f8bcb5f
+WPM1 49f87707616a
+file scene.txt 3342 8a0c9588517e59c2
 file layers/ground_fall.wpl 1830740 43d90ca349d772cf
 file layers/ground_spring.wpl 1824964 837cb4a75c9e6400
 file layers/ground_summer.wpl 1601740 dcdc69efae5133f3
 file layers/ground_winter.wpl 1596020 2f890a6f3c5904f9
+file layers/leaves_fall.wpl 326136 65dfae17c3b0895f
 file layers/moon__moon_waning_growth.wpl 172287 fdef6bcc0ded4f78
 file layers/moon__moon_waxing_growth.wpl 172287 3b8bb7fcbacb89cf
 file layers/night.wpl 1936032 d21ad70d15b7565f
-file layers/rain_heavy.wpl 519070 1ffa3a8ad8d1eed3
-file layers/rain_light.wpl 350540 94df9337e2c03622
+file layers/puddles_heavy.wpl 220490 a9abd7c2987e8870
+file layers/puddles_light.wpl 95482 689ddfdefb2bb999
+file layers/rain_heavy.wpl 306262 dc260a373fb8039a
+file layers/rain_light.wpl 262128 46b9bb8430b42d7f
 file layers/sky_clear.wpl 6377632 1cb83f8eb0b5a952
 file layers/sky_cloudy.wpl 6391728 d6ae971aef4f99e1
 file layers/sky_stormy.wpl 6378464 d3264c01b57cc0a1
@@ -17,7 +20,7 @@ file layers/snowfall_blizzard.wpl 1936032 da4924a78cfb4b21
 file layers/snowfall_heavy.wpl 84638 701da4cd6ab88111
 file layers/snowfall_light.wpl 72451 e5bd62eb92273ba9
 file layers/sun.wpl 146086 1fe7c0ec7eabbc21
-file layers/tree_fall.wpl 2835780 d477e80ef57f3c89
+file layers/tree_fall.wpl 2517062 8be5afecb3e4a28e
 file layers/tree_spring.wpl 1493486 2f044e6f226d3dbd
 file layers/tree_summer.wpl 2194336 645f2b21790cce10
 file layers/tree_winter.wpl 1379864 2168d912553ec730

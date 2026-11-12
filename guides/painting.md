@@ -47,6 +47,7 @@ Keep the ground's horizon and the trunk in the same place in every season. Only 
 | `tree_spring.png` | The tree in spring. | Spring |
 | `tree_summer.png` | The tree in full leaf. | Summer |
 | `tree_fall.png` | The tree in fall color. | Fall |
+| `leaves_fall.png` | Fallen leaves on the ground under the fall tree. | Fall, except while there are puddles |
 | `tree_winter.png` | The bare tree. | Winter |
 | `snow_branches.png` | Snow resting along the branches of the winter tree. | Winter, after real snow, until it warms up |
 
@@ -58,8 +59,10 @@ Keep the ground's horizon and the trunk in the same place in every season. Only 
 | `snowfall_light.png` | A few falling flakes across the picture. | Light snow |
 | `snowfall_heavy.png` | More flakes. | Steady snow |
 | `snowfall_blizzard.png` | Lots of flakes. | Heavy snow |
-| `rain_light.png` | A few raindrops, and small puddles if you like. | Light rain |
-| `rain_heavy.png` | Many raindrops and bigger puddles. | Heavy rain |
+| `rain_light.png` | A few raindrops. | Light rain |
+| `rain_heavy.png` | Many raindrops. | Heavy rain |
+| `puddles_light.png` | A few small puddles on the ground. | Rain, and afterward until the ground dries |
+| `puddles_heavy.png` | Bigger puddles. | Heavy rain, and afterward until the ground dries |
 
 ### Night
 
