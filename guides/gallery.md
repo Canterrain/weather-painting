@@ -33,7 +33,7 @@ Submissions arrive as issues labeled **painting**. The Gallery workflow (`.githu
 
 - **To approve,** add the **approved** label. The workflow checks the painting again, publishes the frame's files as a release named `gallery-<name>`, adds the painting to `docs/gallery.json`, comments, and closes the issue. Frames see it in the gallery a few minutes later, once Pages updates.
 - **To decline,** close the issue as *not planned*, with a comment saying why. The preview pre-release is deleted.
-- **To remove** a painting later, delete its entry from `docs/gallery.json` and push. Frames already showing it keep it until their owner chooses another; delete its release too if it should stop downloading.
+- **To remove** a painting later, delete its entry from `docs/gallery.json` and push. The workflow deletes its release, so no new frame can download it. Frames already showing it keep the copy on their memory card until their owner chooses another painting.
 
 Only the owner's label approves a painting. Labels from anyone else are ignored.
 

@@ -4,6 +4,8 @@
     python3 tools/gallery.py check     a submission was opened or edited
     python3 tools/gallery.py approve   the owner labeled it "approved"
     python3 tools/gallery.py withdraw  it was closed without approval
+    python3 tools/gallery.py prune     docs/gallery.json changed: delete the
+                                       releases of paintings taken out of it
 
 Reads the issue from the event GitHub hands the workflow, and uses the gh
 command line with the workflow's token. Nothing from the issue is ever run or
@@ -159,9 +161,19 @@ def withdraw(event: dict) -> None:
     gh("release", "delete", f"submission-{event['issue']['number']}", "--yes", "--cleanup-tag", check=False)
 
 
+def prune(event: dict) -> None:
+    listed = {p["url"] for p in json.loads(GALLERY.read_text())["paintings"]} if GALLERY.exists() else set()
+    repo = os.environ["GITHUB_REPOSITORY"]
+    for r in json.loads(gh("release", "list", "--limit", "500", "--json", "tagName").stdout):
+        tag = r["tagName"]
+        if tag.startswith("gallery-") and f"https://github.com/{repo}/releases/download/{tag}/" not in listed:
+            print(f"deleting {tag}, which isn't in the gallery any more")
+            gh("release", "delete", tag, "--yes", "--cleanup-tag")
+
+
 def main() -> None:
     event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
-    {"check": check, "approve": approve, "withdraw": withdraw}[sys.argv[1]](event)
+    {"check": check, "approve": approve, "withdraw": withdraw, "prune": prune}[sys.argv[1]](event)
 
 
 if __name__ == "__main__":

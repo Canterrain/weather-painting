@@ -1,8 +1,9 @@
 # Gallery submissions (tools/gallery.py). An issue made from the "Submit a
 # painting" form is checked when it's opened or edited, and a preview is
 # posted on it. When the owner adds the "approved" label, the painting is
-# published as a release and added to docs/gallery.json. When this file
-# changes, the two labels it uses are made, if the repository lacks them.
+# published as a release and added to docs/gallery.json. A painting taken
+# out of docs/gallery.json has its release deleted when that's pushed. When
+# this file changes, the two labels it uses are made, if they're missing.
 name: Gallery
 
 on:
@@ -10,7 +11,7 @@ on:
     types: [opened, edited, labeled, closed]
   push:
     branches: [main]
-    paths: [.github/workflows/gallery.yml]
+    paths: [.github/workflows/gallery.yml, docs/gallery.json]
   workflow_dispatch:
 
 permissions:
@@ -31,6 +32,15 @@ jobs:
       - run: |
           gh label create painting --color 5b8c5a --description "A painting submitted to the gallery" --force
           gh label create approved --color 34589c --description "Approved for the gallery (owner only)" --force
+
+  prune:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/gallery.py prune
 
   gallery:
     if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'painting')
