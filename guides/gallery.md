@@ -37,4 +37,4 @@ Submissions arrive as issues labeled **painting**. The Gallery workflow (`.githu
 
 Only the owner's label approves a painting. Labels from anyone else are ignored.
 
-The repository needs two labels, **painting** and **approved**, before the first submission.
+The workflow makes its two labels, **painting** and **approved**, the first time it's pushed. To make them again, run the Gallery workflow from the Actions tab.
