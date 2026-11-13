@@ -1,7 +1,7 @@
 // Firmware version and where updates and the default painting come from.
 #pragma once
 
-#define FW_VERSION "0.2.4"
+#define FW_VERSION "0.2.5"
 
 // GitHub Pages for Canterrain/weather-painting
 #define PROJECT_SITE      "https://canterrain.github.io/weather-painting/"

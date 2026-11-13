@@ -108,4 +108,6 @@ Put your files in `my_painting/layers/` and copy `painting/scene.yaml` into `my_
 
 ## Share Your Painting
 
-Uploaded layers stay on your frame. To let other frames use your painting, publish it as a website and choose **Another site** in their settings. See [Publishing on GitHub](publishing.md#publish-a-painting).
+Uploaded layers stay on your frame. To let other frames use your painting, submit it to the [gallery](gallery.md). Anyone can then choose it from **Painting → From the gallery** on their settings page.
+
+You can also publish it as your own website and give people its address for **Another site**. See [Publishing on GitHub](publishing.md#publish-a-painting).

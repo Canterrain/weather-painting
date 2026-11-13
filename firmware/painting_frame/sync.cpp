@@ -40,6 +40,7 @@ static String parse_manifest(const String &text, std::map<String, Entry> &out) {
 static bool begin(HTTPClient &http, WiFiClientSecure &tls, const String &url) {
   http.setConnectTimeout(10000);
   http.setTimeout(20000);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);   // GitHub release files redirect to storage
   if (url.startsWith("https")) { tls.setInsecure(); return http.begin(tls, url); }
   return http.begin(url);
 }
@@ -93,6 +94,13 @@ static bool download(const String &url, const String &dest, uint32_t size) {
   return SD.rename(tmp, dest);
 }
 
+// A GitHub release (the gallery) keeps its files side by side, not in
+// folders, so a painting there has layers/x.wpl as x.wpl.
+static String remote_path(const String &base, const String &rel) {
+  if (base.indexOf("/releases/download/") < 0) return rel;
+  return rel.substring(rel.lastIndexOf('/') + 1);
+}
+
 String sync_site(const String &base_url, bool &changed) {
   changed = false;
   String base = base_url.endsWith("/") ? base_url : base_url + "/";
@@ -125,7 +133,7 @@ String sync_site(const String &base_url, bool &changed) {
     }
     if (same) continue;
     uint32_t t = millis();
-    if (!download(base + rel, dest, kv.second.size)) {
+    if (!download(base + remote_path(base, rel), dest, kv.second.size)) {
       LOG.printf("[sync] download of %s failed; will retry next time\n", rel.c_str());
       return local_version;   // keep the old manifest, so the next wake tries again
     }

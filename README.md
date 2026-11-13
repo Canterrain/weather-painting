@@ -15,6 +15,7 @@ Built for the Seeed Studio reTerminal E1004, a 13.3" color e-paper frame. The pa
 - Sunny, cloudy, stormy, and foggy skies
 - The moon in its real phase, shaded from a thin crescent to full every night
 - A demo of every season and kind of weather
+- A gallery of paintings by other people with these frames, and a way to submit your own
 - Wi-Fi setup from your phone, with no credentials to put in the code
 - A settings page for changing Wi-Fi, your city, or the painting later
 - Upload a painting of your own from your browser
@@ -73,7 +74,7 @@ Press the bottom button. The screen shows the settings address, usually **[http:
 From settings you can:
 
 - Change Wi-Fi networks or your city
-- Choose the painting: Julia's, your own, or one published by someone else
+- Choose the painting: Julia's, one from the gallery, your own, or one published elsewhere
 - Upload and remove layers of your own painting
 - Start the demo
 - Turn automatic updates on or off, check for an update, or install firmware from a file
@@ -85,6 +86,8 @@ Settings close after 15 minutes without use.
 The painting is made of separate layers: skies, a ground and tree for each season, snow, fog, rain, night, and the moon. Paint your own on paper or a tablet, export each piece as a 1600 × 1200 PNG, and drop them on the settings page. Only a sky and a summer ground are needed to start.
 
 The [painting guide](guides/painting.md) lists every layer, what to paint, and when the frame shows it.
+
+When it's done, you can [submit it to the gallery](guides/gallery.md) so other frames can show it too.
 
 ## Updating
 
@@ -104,7 +107,8 @@ The firmware uses Arduino for ESP32. The painter tools are Python, for previewin
 | `scenarios/` | Weather situations used to check the rules |
 | `docs/` | GitHub Pages installer, firmware, and published painting |
 | `guides/` | Painting, development, and publishing instructions |
-| `tools/` | Firmware packaging |
+| `tools/` | Firmware packaging and the gallery workflow |
+| `.github/` | The gallery's submission form and workflow |
 
 ## Related Projects
 

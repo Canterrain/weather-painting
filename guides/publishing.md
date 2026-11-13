@@ -66,6 +66,8 @@ To publish a painting of your own instead, fork this repository, replace the lay
 
 If you change `painting/scene.yaml`, also run `.venv/bin/python -m painter firmware-data` and publish a firmware update. The frame's built-in copy of the layout is used for uploaded paintings and the list on the settings page.
 
+Gallery paintings are published differently, as releases. See [The Gallery](gallery.md#review-submissions).
+
 ## Installer References
 
 - [Bread Proof Monitor installer source](https://github.com/Canterrain/bread-proof-monitor/blob/main/docs/index.html)

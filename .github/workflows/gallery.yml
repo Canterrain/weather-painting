@@ -1,0 +1,50 @@
+# Gallery submissions (tools/gallery.py). An issue made from the "Submit a
+# painting" form is checked when it's opened or edited, and a preview is
+# posted on it. When the owner adds the "approved" label, the painting is
+# published as a release and added to docs/gallery.json.
+name: Gallery
+
+on:
+  issues:
+    types: [opened, edited, labeled, closed]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: gallery-${{ github.event.issue.number }}
+
+jobs:
+  gallery:
+    if: contains(github.event.issue.labels.*.name, 'painting')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Choose the step
+        id: step
+        run: |
+          if [ "$ACTION" = opened ] || { [ "$ACTION" = edited ] && [ "$STATE" = open ]; }; then echo do=check >> "$GITHUB_OUTPUT"
+          elif [ "$ACTION" = labeled ] && [ "$LABEL" = approved ] && [ "$SENDER" = "$OWNER" ]; then echo do=approve >> "$GITHUB_OUTPUT"
+          elif [ "$ACTION" = closed ] && [ "$REASON" != completed ]; then echo do=withdraw >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          ACTION: ${{ github.event.action }}
+          STATE: ${{ github.event.issue.state }}
+          LABEL: ${{ github.event.label.name }}
+          SENDER: ${{ github.event.sender.login }}
+          OWNER: ${{ github.repository_owner }}
+          REASON: ${{ github.event.issue.state_reason }}
+      - uses: actions/checkout@v4
+        if: steps.step.outputs.do
+      - uses: actions/setup-python@v5
+        if: steps.step.outputs.do
+        with:
+          python-version: "3.12"
+      - name: Install the painter tools
+        if: steps.step.outputs.do == 'check' || steps.step.outputs.do == 'approve'
+        run: pip install -r requirements.txt
+      - name: Run
+        if: steps.step.outputs.do
+        run: python3 tools/gallery.py "${{ steps.step.outputs.do }}"

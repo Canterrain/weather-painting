@@ -11,6 +11,7 @@
   python -m painter state                        print the live weather state
   python -m painter publish                      layers + compiled rules for frames to download (docs/)
   python -m painter firmware-data                built-in rules + demo cases for the firmware
+  python -m painter.submission layers.zip        check a gallery submission, ready its release
 
 Any command takes --scene FOLDER to use a scene other than the one in config.yaml.
 """

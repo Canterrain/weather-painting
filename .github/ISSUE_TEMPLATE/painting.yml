@@ -1,0 +1,59 @@
+name: Submit a painting
+description: Share your painting with other Weather Painting frames.
+title: "Painting: "
+labels: ["painting"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing your painting! Paint your layers as described in the [painting guide](https://github.com/Canterrain/weather-painting/blob/main/guides/painting.md), each a 1600 × 1200 PNG named as in the guide. Only `sky_clear.png` and `ground_summer.png` are required.
+
+        Put all the PNGs in one zip file, up to 25 MB, and drag it into the **Layers** box below. A few minutes after you submit, a check posts how your painting looks on the frame. The project reviews every painting before it joins the gallery.
+  - type: input
+    id: title
+    attributes:
+      label: Painting's name
+      placeholder: The Old Oak
+    validations:
+      required: true
+  - type: input
+    id: artist
+    attributes:
+      label: Artist's name
+      description: How you'd like to be credited in the gallery.
+    validations:
+      required: true
+  - type: dropdown
+    id: license
+    attributes:
+      label: License
+      description: How others may use your painting. Every option lets people show it on their frames.
+      options:
+        - "CC BY-NC-ND 4.0: not for sale, and no changed versions"
+        - "CC BY-NC 4.0: not for sale, changed versions allowed with credit"
+        - "CC BY 4.0: any use, with credit"
+    validations:
+      required: true
+  - type: textarea
+    id: layers
+    attributes:
+      label: Layers
+      description: Drag your zip file here.
+    validations:
+      required: true
+  - type: textarea
+    id: about
+    attributes:
+      label: About the painting
+      description: Optional. Anything you'd like to say about it.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Before you submit
+      options:
+        - label: I painted or drew this myself by hand, on paper or on a tablet. No part of it was made or changed with AI.
+          required: true
+        - label: It's mine to share, and it's suitable for all ages.
+          required: true
+        - label: Frames anywhere may download and show it, under the license I chose.
+          required: true

@@ -34,6 +34,11 @@ table { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
 td { padding:5px 4px; border-top:1px solid var(--line); vertical-align:top; }
 td.state { white-space:nowrap; text-align:right; }
 .have { color:var(--ok); } .need { color:var(--bad); } .optional { color:var(--muted); }
+.gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:10px; margin-top:10px; }
+.pick { margin:0; font-weight:400; border:1px solid var(--line); border-radius:8px; padding:8px; cursor:pointer; }
+.pick:has(input:checked) { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.pick img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:4px; background:var(--line); margin-bottom:6px; }
+.pick span { display:block; font-size:14px; color:var(--muted); }
 code { background:#f0ece3; padding:1px 4px; border-radius:4px; }
 footer { color:var(--muted); font-size:13px; margin-top:24px; text-align:center; }
 </style>
@@ -73,6 +78,13 @@ footer { color:var(--muted); font-size:13px; margin-top:24px; text-align:center;
     <h2>Painting</h2>
     <label class="choice"><input type="radio" name="source" value="default">
       <span><b>Julia Hendrickson's painting</b>A tree through the seasons. Updates by itself when new layers are published.</span></label>
+    <label class="choice"><input type="radio" name="source" value="gallery">
+      <span><b>From the gallery</b>Paintings by people who make these frames, chosen by the project.</span></label>
+    <div id="galleryBox" hidden>
+      <p class="msg" id="galleryMsg"></p>
+      <div class="gallery" id="galleryList"></div>
+      <p class="note">Painted your own? <a href="https://github.com/Canterrain/weather-painting/issues/new?template=painting.yml">Submit it to the gallery</a>.</p>
+    </div>
     <label class="choice"><input type="radio" name="source" value="mine">
       <span><b>My own painting</b>Layers you paint and upload here. Stays on the frame's memory card.</span></label>
     <label class="choice"><input type="radio" name="source" value="site">
@@ -161,7 +173,7 @@ async function refresh() {
   $("autoUpdate").checked = state.autoUpdate;
   $("fwVersion").textContent = "This frame has version " + state.version + ".";
   $("canvasSize").textContent = state.canvas[0] + "×" + state.canvas[1];
-  const src = state.source === 1 ? "mine" : (state.siteUrl ? "site" : "default");
+  const src = state.source === 1 ? "mine" : !state.siteUrl ? "default" : isGallery(state.siteUrl) ? "gallery" : "site";
   if (!document.querySelector("input[name=source]:checked")) {
     document.querySelector(`input[name=source][value=${src}]`).checked = true;
     $("siteUrl").value = state.siteUrl;
@@ -224,13 +236,58 @@ function chosenSource() { return document.querySelector("input[name=source]:chec
 function showSource() {
   $("siteBox").hidden = chosenSource() !== "site";
   $("mineBox").hidden = chosenSource() !== "mine";
+  $("galleryBox").hidden = chosenSource() !== "gallery";
+  if (chosenSource() === "gallery") loadGallery();
+}
+
+// ---- the gallery ------------------------------------------------------------
+// Approved paintings, each published as a GitHub release; the list comes from
+// the project's site, so this needs the internet, not just the frame.
+const GALLERY = "https://canterrain.github.io/weather-painting/gallery.json";
+let galleryLoaded = false;
+function isGallery(url) { return url.includes("/releases/download/gallery-"); }
+
+async function loadGallery() {
+  if (galleryLoaded) return;
+  say("galleryMsg", "Loading the gallery…");
+  let list;
+  try {
+    const r = await fetch(GALLERY, { cache: "no-cache" });
+    if (!r.ok) throw new Error();
+    list = (await r.json()).paintings || [];
+  } catch (e) {
+    say("galleryMsg", "The gallery couldn't be loaded. It needs this phone or computer to be on the internet.", false);
+    return;
+  }
+  galleryLoaded = true;
+  say("galleryMsg", list.length ? "" : "There are no paintings in the gallery yet.");
+  const box = $("galleryList");
+  box.innerHTML = "";
+  list.forEach(p => {
+    const label = document.createElement("label");
+    label.className = "pick";
+    const img = document.createElement("img");
+    img.src = p.cover; img.alt = ""; img.loading = "lazy";
+    const radio = document.createElement("input");
+    radio.type = "radio"; radio.name = "galleryPick"; radio.value = p.url;
+    radio.checked = state && state.siteUrl === p.url;
+    const title = document.createElement("b");
+    title.textContent = " " + p.title;
+    const by = document.createElement("span");
+    by.textContent = "by " + p.artist;
+    label.append(img, radio, title, by);
+    box.appendChild(label);
+  });
 }
 document.querySelectorAll("input[name=source]").forEach(r => r.onchange = showSource);
 
 $("savePainting").onclick = async () => {
   const src = chosenSource();
+  const picked = document.querySelector("input[name=galleryPick]:checked");
+  if (src === "gallery" && !picked) return say("paintingMsg", "Choose a painting from the gallery first.", false);
+  const siteUrl = src === "site" ? $("siteUrl").value : src === "gallery" ? picked.value : "";
   try {
-    await api("/api/painting", { source: src === "mine" ? 1 : 0, siteUrl: src === "site" ? $("siteUrl").value : "" });
+    await api("/api/painting", { source: src === "mine" ? 1 : 0, siteUrl });
     say("paintingMsg", src === "mine" ? "Saved. Upload your layers below if you haven't." : "Saved.");
     refresh();
   } catch (e) { say("paintingMsg", e.message, false); }
