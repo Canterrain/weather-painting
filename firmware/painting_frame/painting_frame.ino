@@ -110,7 +110,9 @@ static void show_screen(const String &title, const String &body) {
 }
 
 // A problem worth telling the owner about: shown once, then the frame tries
-// again later.
+// again in 2 minutes, then 5, then every 10 until it works. Most problems are
+// the Wi-Fi or internet being down, as after a power cut, and the painting
+// should come back soon after they do.
 static void fail_and_sleep(const char *why, const char *title = nullptr, const String &body = "") {
   LOG.printf("!! %s\n", why);
   g_failures++;
@@ -121,7 +123,7 @@ static void fail_and_sleep(const char *why, const char *title = nullptr, const S
       g_notice = id;
     }
   }
-  uint32_t mins = min<uint32_t>(5u << min<uint32_t>(g_failures - 1, 3), settings.refresh_minutes);
+  uint32_t mins = g_failures == 1 ? 2 : g_failures == 2 ? 5 : 10;
   sleep_for(mins * 60);
 }
 
@@ -341,9 +343,11 @@ void setup() {
   if (!settings.location.length()) open_settings(false);
 
   if (!connect_wifi())
-    fail_and_sleep("Wi-Fi didn't connect", "Can't reach the Wi-Fi",
-                   "The frame couldn't connect to " + settings.ssid + ". It keeps trying.\n\n"
-                   "To change the network or password, press the bottom button and follow the steps.");
+    fail_and_sleep("Wi-Fi didn't connect", "Can't connect to Wi-Fi",
+                   "The frame can't connect to " + settings.ssid + ". If the Wi-Fi is down, the painting "
+                   "comes back on its own once it's working again. The frame tries every few minutes, "
+                   "or press the top button to try now.\n\n"
+                   "To change the network or password, press the bottom button.");
   if (!sync_clock()) fail_and_sleep("couldn't get the time");
   maybe_update_firmware();
 
@@ -356,7 +360,8 @@ void setup() {
   if (!load_scene(scene))
     fail_and_sleep("no painting yet", "No painting yet",
                    "The frame couldn't download its painting from " + settings.painting_url() + "\n\n"
-                   "It keeps trying. To choose another painting, press the bottom button.");
+                   "It tries again every few minutes, or press the top button to try now. "
+                   "To choose another painting, press the bottom button.");
 
   Place place;
   if (!load_place(place))

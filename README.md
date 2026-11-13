@@ -56,6 +56,8 @@ You don't need Arduino IDE to use the browser installer. If you'd rather build i
 
 Hang the frame in landscape with its buttons on the right. It checks the weather every 30 minutes, or every 15 while it's raining or snowing, and redraws only when the painting has changed. A redraw takes about 45 seconds.
 
+If the Wi-Fi or internet goes down, as in a power cut, the frame shows a notice and tries again every few minutes. The painting comes back on its own once the connection does, or press the top button to try right away.
+
 | Button | What it does |
 | --- | --- |
 | **Top** | Redraw now. In the demo, go back to the real weather. In settings, close them. |
