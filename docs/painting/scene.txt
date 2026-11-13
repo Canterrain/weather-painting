@@ -94,6 +94,12 @@ when v:season s:winter o:== v:temp_c n:1.0 o:<= o:and v:snow_depth_cm n:2.0 o:>=
 amount n:1.0
 opacity n:1.0
 end
+layer fog 0 10 3932 0
+file fog.wpl
+when v:is_foggy
+amount n:1.0
+opacity n:1.0
+end
 layer snowfall 0 10 3932 0
 stage 0.0 snowfall_light.wpl
 stage 0.4 snowfall_heavy.wpl
