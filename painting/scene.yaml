@@ -50,11 +50,12 @@ layers:
     optional: true
 
   # ---------------- puddles, under the tree ----------------
-  # They come with the rain and stay until the ground dries, unless frozen
-  # or snowed over.
+  # They come once about 1 mm of rain has collected, not with the first
+  # drizzle, grow bigger from 4 mm, and shrink and go as the ground dries,
+  # unless frozen or snowed over.
   - id: puddles
-    amount: "max(ramp(puddle_mm, 0, 10), ramp(rain_mm_h, 0, 6))"
-    when: "(is_raining or puddle_mm >= 1) and snow_depth_cm < 1 and not puddles_frozen"
+    amount: "ramp(puddle_mm, 0, 8)"
+    when: "puddle_mm >= 1 and snow_depth_cm < 1 and not puddles_frozen"
     optional: true
     stages:
       - {at: 0.0, file: layers/puddles_light.png}
@@ -76,7 +77,7 @@ layers:
   # The fallen leaves, hidden while there are puddles: they'd land on them.
   - id: leaves_fall
     file: layers/leaves_fall.png
-    when: "season == 'autumn' and not ((is_raining or puddle_mm >= 1) and snow_depth_cm < 1 and not puddles_frozen)"
+    when: "season == 'autumn' and not (puddle_mm >= 1 and snow_depth_cm < 1 and not puddles_frozen)"
     optional: true
   - id: tree_winter
     file: layers/tree_winter.png

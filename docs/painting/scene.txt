@@ -54,8 +54,8 @@ end
 layer puddles 0 10 3932 0
 stage 0.0 puddles_light.wpl
 stage 0.5 puddles_heavy.wpl
-when v:is_raining v:puddle_mm n:1.0 o:>= o:or v:snow_depth_cm n:1.0 o:< o:and v:puddles_frozen o:not o:and
-amount v:puddle_mm n:0.0 n:10.0 f:ramp:3 v:rain_mm_h n:0.0 n:6.0 f:ramp:3 f:max:2
+when v:puddle_mm n:1.0 o:>= v:snow_depth_cm n:1.0 o:< o:and v:puddles_frozen o:not o:and
+amount v:puddle_mm n:0.0 n:8.0 f:ramp:3
 opacity n:1.0
 end
 layer tree_spring 0 10 3932 0
@@ -78,7 +78,7 @@ opacity n:1.0
 end
 layer leaves_fall 0 10 3932 0
 file leaves_fall.wpl
-when v:season s:autumn o:== v:is_raining v:puddle_mm n:1.0 o:>= o:or v:snow_depth_cm n:1.0 o:< o:and v:puddles_frozen o:not o:and o:not o:and
+when v:season s:autumn o:== v:puddle_mm n:1.0 o:>= v:snow_depth_cm n:1.0 o:< o:and v:puddles_frozen o:not o:and o:not o:and
 amount n:1.0
 opacity n:1.0
 end

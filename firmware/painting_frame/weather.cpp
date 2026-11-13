@@ -169,7 +169,7 @@ struct Observed {
 
 // '-TSRA BR', 'VCSH', '+SN FZFG' -> rain and snow rates, thunder, fog
 static Observed read_weather(const String &wx) {
-  static const double RAIN[3] = {1.0, 4.0, 10.0}, DRIZZLE[3] = {0.2, 0.5, 1.0}, SNOW[3] = {0.3, 1.2, 3.0};
+  static const double RAIN[3] = {0.5, 4.0, 10.0}, DRIZZLE[3] = {0.2, 0.5, 1.0}, SNOW[3] = {0.3, 1.2, 3.0};
   Observed o;
   int start = 0;
   while (start < (int)wx.length()) {
@@ -562,12 +562,8 @@ bool fetch_state(const Place &place, double now, State &st) {
     if (i > idx - 24) { rain24 += rain; snow24 += snowfall; }
     if (i > idx - 3) rain3 += rain;
   }
-  // and what's been seen so far this hour, which the history doesn't have yet
   double hour_end = times[idx].as<double>() + 3600;
-  if (SeenHour *seen = seen_hour(hour_end, false)) {
-    if (num(hourly["temperature_2m"][idx]) > 0) puddle = fmin(puddle + seen->rain_mm, PUDDLE_FULL_MM);
-    snow += seen->snow_cm;
-  }
+  bool thawed = num(hourly["temperature_2m"][idx]) > 0;
 
   double api_snow_cm = num(hourly["snow_depth"][idx]) * 100.0;
   double snow_depth = fmax(snow, api_snow_cm);
@@ -618,10 +614,7 @@ bool fetch_state(const Place &place, double now, State &st) {
   st.set("is_snowing", !strcmp(cond, "snow") || snow_now > 0.05);
   st.set("is_foggy", !strcmp(cond, "fog"));
   st.set("is_stormy", !strcmp(cond, "thunderstorm"));
-  st.set("snow_depth_cm", pyround(snow_depth, 1));
   st.set("roof_snow_cm", pyround(roof_snow, 1));
-  st.set("puddle_mm", pyround(puddle, 1));
-  st.set("puddles_frozen", puddle > 0.5 && temp < -1);
   st.set("rain_last_24h_mm", pyround(rain24, 1));
   st.set("snow_last_24h_cm", pyround(snow24, 1));
   st.set("ground_wet", rain3 > 0.2);
@@ -640,5 +633,14 @@ bool fetch_state(const Place &place, double now, State &st) {
   doc.clear();
   blend(place, now, soon_rain, soon_snow, st);
   tally(place, now, hour_end, st.get("rain_mm_h")->num, st.get("snowfall_cm_h")->num);
+  // and what's been seen so far this hour, up to now, which the history
+  // doesn't have yet: puddles fill as the rain falls
+  if (SeenHour *seen = seen_hour(hour_end, false)) {
+    if (thawed) puddle = fmin(puddle + seen->rain_mm, PUDDLE_FULL_MM);
+    snow_depth += seen->snow_cm;
+  }
+  st.set("snow_depth_cm", pyround(snow_depth, 1));
+  st.set("puddle_mm", pyround(puddle, 1));
+  st.set("puddles_frozen", puddle > 0.5 && temp < -1);
   return true;
 }

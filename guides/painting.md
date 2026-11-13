@@ -61,8 +61,8 @@ Keep the ground's horizon and the trunk in the same place in every season. Only 
 | `snowfall_blizzard.png` | Lots of flakes. | Heavy snow |
 | `rain_light.png` | A few raindrops. | Light rain |
 | `rain_heavy.png` | Many raindrops. | Heavy rain |
-| `puddles_light.png` | A few small puddles on the ground. | Rain, and afterward until the ground dries |
-| `puddles_heavy.png` | Bigger puddles. | Heavy rain, and afterward until the ground dries |
+| `puddles_light.png` | A few small puddles on the ground. | Once about 1 mm of rain has collected, until the ground dries |
+| `puddles_heavy.png` | Bigger puddles. | Once about 4 mm has collected, until it dries back down |
 
 ### Night
 

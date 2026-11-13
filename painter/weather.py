@@ -259,7 +259,7 @@ REPORT_KM = 50          # farthest airport worth believing
 REPORT_MAX_AGE = 90     # minutes before a report is too old to use
 
 # rain and snow rates for light (-), moderate and heavy (+) reports
-RAIN_MM_H = {"-": 1.0, "": 4.0, "+": 10.0}
+RAIN_MM_H = {"-": 0.5, "": 4.0, "+": 10.0}
 DRIZZLE_MM_H = {"-": 0.2, "": 0.5, "+": 1.0}
 SNOW_CM_H = {"-": 0.3, "": 1.2, "+": 3.0}
 

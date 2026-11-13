@@ -1,5 +1,5 @@
-WPM1 1990a5860524
-file scene.txt 3424 e498e87a2f5a86eb
+WPM1 7f3576d33a66
+file scene.txt 3346 32f7cab864fe29f5
 file layers/fog.wpl 1362912 5a0b188e4d780a0b
 file layers/ground_fall.wpl 1830740 43d90ca349d772cf
 file layers/ground_spring.wpl 1824964 837cb4a75c9e6400
