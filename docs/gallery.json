@@ -1,12 +1,3 @@
 {
-  "paintings": [
-    {
-      "title": "The Old Oak",
-      "artist": "Julia Test person",
-      "license": "CC BY-NC-ND 4.0",
-      "url": "https://github.com/Canterrain/weather-painting/releases/download/gallery-the-old-oak/",
-      "cover": "https://github.com/Canterrain/weather-painting/releases/download/gallery-the-old-oak/cover.jpg",
-      "issue": 1
-    }
-  ]
+  "paintings": []
 }
