@@ -65,7 +65,7 @@ If the Wi-Fi or internet goes down, as in a power cut, the frame shows a notice 
 | **Middle** | Start the demo. In the demo, skip ahead to the next season. |
 | **Bottom** | Open settings. |
 
-The demo shows all 46 combinations of season and weather in turn, with a label for each, so you don't have to wait for a blizzard to see one.
+The demo shows all 47 combinations of season and weather in turn, with a label for each, so you don't have to wait for a blizzard to see one.
 
 ### Settings
 

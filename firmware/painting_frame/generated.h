@@ -65,6 +65,12 @@ when v:puddle_mm n:1.0 o:>= v:snow_depth_cm n:1.0 o:< o:and v:puddles_frozen o:n
 amount v:puddle_mm n:0.0 n:8.0 f:ramp:3
 opacity n:1.0
 end
+layer snowy_ground 0 10 3932 0
+file snowy_ground.wpl
+when v:snow_depth_cm n:1.0 o:>=
+amount n:1.0
+opacity n:1.0
+end
 layer tree_spring 0 10 3932 0
 file tree_spring.wpl
 when v:season s:spring o:==
@@ -85,7 +91,7 @@ opacity n:1.0
 end
 layer leaves_fall 0 10 3932 0
 file leaves_fall.wpl
-when v:season s:autumn o:== v:puddle_mm n:1.0 o:>= v:snow_depth_cm n:1.0 o:< o:and v:puddles_frozen o:not o:and o:not o:and
+when v:season s:autumn o:== v:snow_depth_cm n:1.0 o:< o:and v:puddle_mm n:1.0 o:>= v:puddles_frozen o:not o:and o:not o:and
 amount n:1.0
 opacity n:1.0
 end
@@ -93,6 +99,15 @@ layer tree_winter 0 10 3932 0
 file tree_winter.wpl
 when v:season s:winter o:==
 amount n:1.0
+opacity n:1.0
+end
+layer snow_drifts 0 10 3932 0
+stage 0.2 snow_depth_1.wpl
+stage 0.4 snow_depth_2.wpl
+stage 0.7 snow_depth_3.wpl
+stage 1.0 snow_depth_4.wpl
+when v:snow_depth_cm n:5.0 o:>=
+amount v:snow_depth_cm n:0.0 n:25.0 f:ramp:3
 opacity n:1.0
 end
 layer snow_branches 0 10 3932 0
@@ -141,8 +156,8 @@ amount v:moon_illum
 opacity n:1.0
 end
 )WP";
-static const char STANDARD_LAYERS[] = R"WP([{"id": "sky_clear", "required": true, "files": [{"png": "sky_clear.png", "reveal": null, "wpl": "sky_clear.wpl"}]}, {"id": "sky_cloudy", "required": false, "files": [{"png": "sky_cloudy.png", "reveal": null, "wpl": "sky_cloudy.wpl"}]}, {"id": "sky_stormy", "required": false, "files": [{"png": "sky_stormy.png", "reveal": null, "wpl": "sky_stormy.wpl"}]}, {"id": "sun", "required": false, "files": [{"png": "sun.png", "reveal": null, "wpl": "sun.wpl"}]}, {"id": "ground_spring", "required": false, "files": [{"png": "ground_spring.png", "reveal": null, "wpl": "ground_spring.wpl"}]}, {"id": "ground_summer", "required": true, "files": [{"png": "ground_summer.png", "reveal": null, "wpl": "ground_summer.wpl"}]}, {"id": "ground_fall", "required": false, "files": [{"png": "ground_fall.png", "reveal": null, "wpl": "ground_fall.wpl"}]}, {"id": "ground_winter", "required": false, "files": [{"png": "ground_winter.png", "reveal": null, "wpl": "ground_winter.wpl"}]}, {"id": "puddles", "required": false, "files": [{"png": "puddles_light.png", "reveal": null, "wpl": "puddles_light.wpl"}, {"png": "puddles_heavy.png", "reveal": null, "wpl": "puddles_heavy.wpl"}]}, {"id": "tree_spring", "required": false, "files": [{"png": "tree_spring.png", "reveal": null, "wpl": "tree_spring.wpl"}]}, {"id": "tree_summer", "required": false, "files": [{"png": "tree_summer.png", "reveal": null, "wpl": "tree_summer.wpl"}]}, {"id": "tree_fall", "required": false, "files": [{"png": "tree_fall.png", "reveal": null, "wpl": "tree_fall.wpl"}]}, {"id": "leaves_fall", "required": false, "files": [{"png": "leaves_fall.png", "reveal": null, "wpl": "leaves_fall.wpl"}]}, {"id": "tree_winter", "required": false, "files": [{"png": "tree_winter.png", "reveal": null, "wpl": "tree_winter.wpl"}]}, {"id": "snow_branches", "required": false, "files": [{"png": "snow_branches.png", "reveal": null, "wpl": "snow_branches.wpl"}]}, {"id": "fog", "required": false, "files": [{"png": "fog.png", "reveal": null, "wpl": "fog.wpl"}]}, {"id": "snowfall", "required": false, "files": [{"png": "snowfall_light.png", "reveal": null, "wpl": "snowfall_light.wpl"}, {"png": "snowfall_heavy.png", "reveal": null, "wpl": "snowfall_heavy.wpl"}, {"png": "snowfall_blizzard.png", "reveal": null, "wpl": "snowfall_blizzard.wpl"}]}, {"id": "rain", "required": false, "files": [{"png": "rain_light.png", "reveal": null, "wpl": "rain_light.wpl"}, {"png": "rain_heavy.png", "reveal": null, "wpl": "rain_heavy.wpl"}]}, {"id": "night", "required": false, "files": [{"png": "night.png", "reveal": null, "wpl": "night.wpl"}]}, {"id": "moon_waxing", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waxing_growth.png", "wpl": "moon__moon_waxing_growth.wpl"}]}, {"id": "moon_waning", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waning_growth.png", "wpl": "moon__moon_waning_growth.wpl"}]}])WP";
-static const char DEMO_CASES[] = R"WP(WPD2 46
+static const char STANDARD_LAYERS[] = R"WP([{"id": "sky_clear", "required": true, "files": [{"png": "sky_clear.png", "reveal": null, "wpl": "sky_clear.wpl"}]}, {"id": "sky_cloudy", "required": false, "files": [{"png": "sky_cloudy.png", "reveal": null, "wpl": "sky_cloudy.wpl"}]}, {"id": "sky_stormy", "required": false, "files": [{"png": "sky_stormy.png", "reveal": null, "wpl": "sky_stormy.wpl"}]}, {"id": "sun", "required": false, "files": [{"png": "sun.png", "reveal": null, "wpl": "sun.wpl"}]}, {"id": "ground_spring", "required": false, "files": [{"png": "ground_spring.png", "reveal": null, "wpl": "ground_spring.wpl"}]}, {"id": "ground_summer", "required": true, "files": [{"png": "ground_summer.png", "reveal": null, "wpl": "ground_summer.wpl"}]}, {"id": "ground_fall", "required": false, "files": [{"png": "ground_fall.png", "reveal": null, "wpl": "ground_fall.wpl"}]}, {"id": "ground_winter", "required": false, "files": [{"png": "ground_winter.png", "reveal": null, "wpl": "ground_winter.wpl"}]}, {"id": "puddles", "required": false, "files": [{"png": "puddles_light.png", "reveal": null, "wpl": "puddles_light.wpl"}, {"png": "puddles_heavy.png", "reveal": null, "wpl": "puddles_heavy.wpl"}]}, {"id": "snowy_ground", "required": false, "files": [{"png": "snowy_ground.png", "reveal": null, "wpl": "snowy_ground.wpl"}]}, {"id": "tree_spring", "required": false, "files": [{"png": "tree_spring.png", "reveal": null, "wpl": "tree_spring.wpl"}]}, {"id": "tree_summer", "required": false, "files": [{"png": "tree_summer.png", "reveal": null, "wpl": "tree_summer.wpl"}]}, {"id": "tree_fall", "required": false, "files": [{"png": "tree_fall.png", "reveal": null, "wpl": "tree_fall.wpl"}]}, {"id": "leaves_fall", "required": false, "files": [{"png": "leaves_fall.png", "reveal": null, "wpl": "leaves_fall.wpl"}]}, {"id": "tree_winter", "required": false, "files": [{"png": "tree_winter.png", "reveal": null, "wpl": "tree_winter.wpl"}]}, {"id": "snow_drifts", "required": false, "files": [{"png": "snow_depth_1.png", "reveal": null, "wpl": "snow_depth_1.wpl"}, {"png": "snow_depth_2.png", "reveal": null, "wpl": "snow_depth_2.wpl"}, {"png": "snow_depth_3.png", "reveal": null, "wpl": "snow_depth_3.wpl"}, {"png": "snow_depth_4.png", "reveal": null, "wpl": "snow_depth_4.wpl"}]}, {"id": "snow_branches", "required": false, "files": [{"png": "snow_branches.png", "reveal": null, "wpl": "snow_branches.wpl"}]}, {"id": "fog", "required": false, "files": [{"png": "fog.png", "reveal": null, "wpl": "fog.wpl"}]}, {"id": "snowfall", "required": false, "files": [{"png": "snowfall_light.png", "reveal": null, "wpl": "snowfall_light.wpl"}, {"png": "snowfall_heavy.png", "reveal": null, "wpl": "snowfall_heavy.wpl"}, {"png": "snowfall_blizzard.png", "reveal": null, "wpl": "snowfall_blizzard.wpl"}]}, {"id": "rain", "required": false, "files": [{"png": "rain_light.png", "reveal": null, "wpl": "rain_light.wpl"}, {"png": "rain_heavy.png", "reveal": null, "wpl": "rain_heavy.wpl"}]}, {"id": "night", "required": false, "files": [{"png": "night.png", "reveal": null, "wpl": "night.wpl"}]}, {"id": "moon_waxing", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waxing_growth.png", "wpl": "moon__moon_waxing_growth.wpl"}]}, {"id": "moon_waning", "required": false, "files": [{"png": "moon.png", "reveal": "moon_waning_growth.png", "wpl": "moon__moon_waning_growth.wpl"}]}])WP";
+static const char DEMO_CASES[] = R"WP(WPD2 47
 demo Spring: Clear day
 v hour n 12
 v month n 4
@@ -398,8 +413,8 @@ v is_raining n 0
 v is_snowing n 1
 v is_foggy n 0
 v is_stormy n 0
-v snow_depth_cm n 0.5
-v roof_snow_cm n 0.5
+v snow_depth_cm n 1.5
+v roof_snow_cm n 1
 v puddle_mm n 0
 v puddles_frozen n 0
 v rain_last_24h_mm n 0
@@ -1091,8 +1106,8 @@ v is_raining n 0
 v is_snowing n 1
 v is_foggy n 0
 v is_stormy n 0
-v snow_depth_cm n 0.5
-v roof_snow_cm n 0.5
+v snow_depth_cm n 1.5
+v roof_snow_cm n 1
 v puddle_mm n 0
 v puddles_frozen n 0
 v rain_last_24h_mm n 0
@@ -1454,8 +1469,41 @@ v is_raining n 0
 v is_snowing n 1
 v is_foggy n 0
 v is_stormy n 0
-v snow_depth_cm n 0.5
-v roof_snow_cm n 0.5
+v snow_depth_cm n 1.5
+v roof_snow_cm n 1
+v puddle_mm n 0
+v puddles_frozen n 0
+v rain_last_24h_mm n 0
+v snow_last_24h_cm n 0
+v ground_wet n 0
+v stars_visible n 0
+end
+demo Winter: Snow piling up
+v hour n 12
+v month n 1
+v season s winter
+v phase s day
+v is_day n 1
+v is_night n 0
+v sun_alt n 45
+v moon_alt n -20
+v moon_up n 0
+v moon_illum n 0.5
+v moon_waxing n 1
+v moon_phase s first_quarter
+v temp_c n -3
+v cloud_cover n 100
+v wind_kmh n 5
+v weather_code n 0
+v condition s snow
+v rain_mm_h n 0
+v snowfall_cm_h n 1
+v is_raining n 0
+v is_snowing n 1
+v is_foggy n 0
+v is_stormy n 0
+v snow_depth_cm n 5
+v roof_snow_cm n 4
 v puddle_mm n 0
 v puddles_frozen n 0
 v rain_last_24h_mm n 0
@@ -1487,8 +1535,8 @@ v is_raining n 0
 v is_snowing n 1
 v is_foggy n 0
 v is_stormy n 0
-v snow_depth_cm n 8
-v roof_snow_cm n 6
+v snow_depth_cm n 10
+v roof_snow_cm n 8
 v puddle_mm n 0
 v puddles_frozen n 0
 v rain_last_24h_mm n 0
@@ -1553,7 +1601,7 @@ v is_raining n 0
 v is_snowing n 0
 v is_foggy n 0
 v is_stormy n 0
-v snow_depth_cm n 15
+v snow_depth_cm n 18
 v roof_snow_cm n 8
 v puddle_mm n 0
 v puddles_frozen n 0

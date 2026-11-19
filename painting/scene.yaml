@@ -2,8 +2,9 @@
 #
 # These layer names are the ones the frame's settings page expects when you
 # upload your own painting (guides/painting.md). Bottom to top: sky, sun,
-# ground (one per season), puddles, tree (one per season), fallen leaves,
-# snow on the branches, fog, falling snow, rain, night, moon. Every layer
+# ground (one per season), puddles, a light snow cover, tree (one per
+# season), fallen leaves, snow drifts, snow on the branches, fog, falling
+# snow, rain, night, moon. Every layer
 # except sky_clear and ground_summer is optional: a missing file is skipped,
 # so a painting works from day one and gains detail as layers are added.
 #
@@ -61,6 +62,14 @@ layers:
       - {at: 0.0, file: layers/puddles_light.png}
       - {at: 0.5, file: layers/puddles_heavy.png}
 
+  # ---------------- a light snow cover, behind the tree ----------------
+  # A thin, see-through white over the ground once snow is lying, before
+  # it's deep enough for the drifts.
+  - id: snowy_ground
+    file: layers/snowy_ground.png
+    when: "snow_depth_cm >= 1"
+    optional: true
+
   # ---------------- tree (one per season) ----------------
   - id: tree_spring
     file: layers/tree_spring.png
@@ -74,15 +83,30 @@ layers:
     file: layers/tree_fall.png
     when: "season == 'autumn'"
     optional: true
-  # The fallen leaves, hidden while there are puddles: they'd land on them.
+  # The fallen leaves, hidden while there are puddles (they'd land on them)
+  # or snow on the ground.
   - id: leaves_fall
     file: layers/leaves_fall.png
-    when: "season == 'autumn' and not (puddle_mm >= 1 and snow_depth_cm < 1 and not puddles_frozen)"
+    when: "season == 'autumn' and snow_depth_cm < 1 and not (puddle_mm >= 1 and not puddles_frozen)"
     optional: true
   - id: tree_winter
     file: layers/tree_winter.png
     when: "season == 'winter'"
     optional: true
+
+  # ---------------- snow piling up, in front of the tree ----------------
+  # Drifts rise from the bottom of the picture as snow piles up, and go
+  # back down as it melts: 5, 10, 18 and 25 cm (2, 4, 7 and 10 inches). The
+  # deepest buries the bottom of the trunk. Each stage is the whole drift.
+  - id: snow_drifts
+    amount: "ramp(snow_depth_cm, 0, 25)"
+    when: "snow_depth_cm >= 5"
+    optional: true
+    stages:
+      - {at: 0.2, file: layers/snow_depth_1.png}
+      - {at: 0.4, file: layers/snow_depth_2.png}
+      - {at: 0.7, file: layers/snow_depth_3.png}
+      - {at: 1.0, file: layers/snow_depth_4.png}
 
   # ---------------- snow resting on the branches ----------------
   # Stays after the snow stops, until it warms up.

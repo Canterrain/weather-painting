@@ -44,12 +44,17 @@ Keep the ground's horizon and the trunk in the same place in every season. Only 
 | `ground_summer.png` | Summer ground. | Summer |
 | `ground_fall.png` | Golden, dormant ground. | Fall |
 | `ground_winter.png` | Winter ground, under snow. | Winter, and whenever snow is lying in any other season |
+| `snowy_ground.png` | A thin, see-through white over the ground, behind the tree. | Once 1 cm (half an inch) of snow is lying |
 | `tree_spring.png` | The tree in spring. | Spring |
 | `tree_summer.png` | The tree in full leaf. | Summer |
 | `tree_fall.png` | The tree in fall color. | Fall |
-| `leaves_fall.png` | Fallen leaves on the ground under the fall tree. | Fall, except while there are puddles |
+| `leaves_fall.png` | Fallen leaves on the ground under the fall tree. | Fall, except while there are puddles or snow |
 | `tree_winter.png` | The bare tree. | Winter |
 | `snow_branches.png` | Snow resting along the branches of the winter tree. | Winter, after real snow, until it warms up |
+| `snow_depth_1.png` | A low drift of snow along the bottom of the picture, in front of the tree. | 5 cm (2 in) of snow lying |
+| `snow_depth_2.png` | The drift higher. Each stage is the whole drift, not just the new part. | 10 cm (4 in) |
+| `snow_depth_3.png` | Higher again, up to the tree. | 18 cm (7 in) |
+| `snow_depth_4.png` | The deepest: the bottom of the trunk buried. | 25 cm (10 in) or more |
 
 ### Fog and Falling Weather
 

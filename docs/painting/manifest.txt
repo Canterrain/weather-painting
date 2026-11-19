@@ -1,5 +1,5 @@
-WPM1 7f3576d33a66
-file scene.txt 3346 32f7cab864fe29f5
+WPM1 c86878eb039a
+file scene.txt 3695 52f4dc5186877bb5
 file layers/fog.wpl 1362912 5a0b188e4d780a0b
 file layers/ground_fall.wpl 1830740 43d90ca349d772cf
 file layers/ground_spring.wpl 1824964 837cb4a75c9e6400
@@ -17,9 +17,14 @@ file layers/sky_clear.wpl 6377632 1cb83f8eb0b5a952
 file layers/sky_cloudy.wpl 6391728 d6ae971aef4f99e1
 file layers/sky_stormy.wpl 6378464 d3264c01b57cc0a1
 file layers/snow_branches.wpl 37442 522c0309f5e6c066
+file layers/snow_depth_1.wpl 103491 48895bc99dea1917
+file layers/snow_depth_2.wpl 175304 37870341412b8f04
+file layers/snow_depth_3.wpl 323986 fdc2c13d395906b3
+file layers/snow_depth_4.wpl 421817 ae08ed073316fa1d
 file layers/snowfall_blizzard.wpl 1936032 da4924a78cfb4b21
 file layers/snowfall_heavy.wpl 84638 701da4cd6ab88111
 file layers/snowfall_light.wpl 72451 e5bd62eb92273ba9
+file layers/snowy_ground.wpl 412166 085bc5bbc9353df5
 file layers/sun.wpl 146086 1fe7c0ec7eabbc21
 file layers/tree_fall.wpl 2517062 8be5afecb3e4a28e
 file layers/tree_spring.wpl 1493486 2f044e6f226d3dbd
