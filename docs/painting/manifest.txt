@@ -1,4 +1,4 @@
-WPM1 2ee24bf82866
+WPM1 86d249c9142a
 file scene.txt 3579 789e194e4f7534eb
 file layers/fog.wpl 1362912 5a0b188e4d780a0b
 file layers/ground_fall.wpl 1830740 43d90ca349d772cf
@@ -13,8 +13,8 @@ file layers/puddles_heavy.wpl 220490 a9abd7c2987e8870
 file layers/puddles_light.wpl 95482 689ddfdefb2bb999
 file layers/rain_heavy.wpl 306262 dc260a373fb8039a
 file layers/rain_light.wpl 262128 46b9bb8430b42d7f
-file layers/sky_clear.wpl 5776032 4b6b134527f9f5be
-file layers/sky_cloudy.wpl 5776032 7c84836bee4ba68a
+file layers/sky_clear.wpl 5776032 8b9da7c78b74cf7a
+file layers/sky_cloudy.wpl 5776032 d121b41fab95a8cd
 file layers/sky_stormy.wpl 6378464 d3264c01b57cc0a1
 file layers/snow_branches.wpl 37442 522c0309f5e6c066
 file layers/snow_depth_1.wpl 103491 48895bc99dea1917
