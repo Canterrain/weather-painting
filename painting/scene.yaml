@@ -2,8 +2,8 @@
 #
 # These layer names are the ones the frame's settings page expects when you
 # upload your own painting (guides/painting.md). Bottom to top: sky, sun,
-# ground (one per season), puddles, a light snow cover, tree (one per
-# season), fallen leaves, snow drifts, snow on the branches, fog, falling
+# ground (one per season), puddles, tree (one per season), fallen leaves,
+# snow drifts, snow on the branches, fog, falling
 # snow, rain, night, moon. Every layer
 # except sky_clear and ground_summer is optional: a missing file is skipped,
 # so a painting works from day one and gains detail as layers are added.
@@ -61,14 +61,6 @@ layers:
     stages:
       - {at: 0.0, file: layers/puddles_light.png}
       - {at: 0.5, file: layers/puddles_heavy.png}
-
-  # ---------------- a light snow cover, behind the tree ----------------
-  # A thin, see-through white over the ground once snow is lying, before
-  # it's deep enough for the drifts.
-  - id: snowy_ground
-    file: layers/snowy_ground.png
-    when: "snow_depth_cm >= 1"
-    optional: true
 
   # ---------------- tree (one per season) ----------------
   - id: tree_spring

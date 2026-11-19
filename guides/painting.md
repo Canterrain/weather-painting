@@ -44,7 +44,6 @@ Keep the ground's horizon and the trunk in the same place in every season. Only 
 | `ground_summer.png` | Summer ground. | Summer |
 | `ground_fall.png` | Golden, dormant ground. | Fall |
 | `ground_winter.png` | Winter ground, under snow. | Winter, and whenever snow is lying in any other season |
-| `snowy_ground.png` | A thin, see-through white over the ground, behind the tree. | Once 1 cm (half an inch) of snow is lying |
 | `tree_spring.png` | The tree in spring. | Spring |
 | `tree_summer.png` | The tree in full leaf. | Summer |
 | `tree_fall.png` | The tree in fall color. | Fall |

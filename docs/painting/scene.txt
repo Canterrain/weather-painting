@@ -58,12 +58,6 @@ when v:puddle_mm n:1.0 o:>= v:snow_depth_cm n:1.0 o:< o:and v:puddles_frozen o:n
 amount v:puddle_mm n:0.0 n:8.0 f:ramp:3
 opacity n:1.0
 end
-layer snowy_ground 0 10 3932 0
-file snowy_ground.wpl
-when v:snow_depth_cm n:1.0 o:>=
-amount n:1.0
-opacity n:1.0
-end
 layer tree_spring 0 10 3932 0
 file tree_spring.wpl
 when v:season s:spring o:==
