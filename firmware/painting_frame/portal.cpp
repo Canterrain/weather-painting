@@ -92,6 +92,7 @@ static void handle_state() {
   j += "\"ssid\":" + q(cfg->ssid) + ",";
   j += "\"location\":" + q(cfg->location) + ",";
   j += "\"report\":" + q(last_report()) + ",";
+  j += "\"reportChecked\":" + String(report_checked() ? "true" : "false") + ",";
   j += "\"source\":" + String(cfg->source) + ",";
   j += "\"siteUrl\":" + q(cfg->site_url) + ",";
   j += "\"defaultSite\":" + q(DEFAULT_SITE_URL) + ",";
@@ -139,10 +140,12 @@ static void handle_location() {
   if (WiFi.status() == WL_CONNECTED) {
     Place place;
     if (!geocode(loc, place)) return fail("Couldn't find \"" + loc + "\". Try City,State,Country.");
+    if (loc != cfg->location) forget_report();
     cfg->location = loc;
     save_settings(*cfg);
     return ok("\"found\":" + q(place.name));
   }
+  if (loc != cfg->location) forget_report();
   cfg->location = loc;   // no internet yet (setup network): it's looked up after setup
   save_settings(*cfg);
   ok("\"found\":\"\"");

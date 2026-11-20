@@ -19,3 +19,8 @@ bool fetch_state(const Place &place, double now, State &state);
 // vote ("KLUK 9 km: TSRA BR; KCVG 16 km: RA BR; forecast: dry"), or "" when
 // there were none and the forecast decided alone.
 const char *last_report();
+
+// Whether the frame has looked for radar and airports since it started or the
+// city changed; until it has, an empty last_report() means "not checked yet".
+bool report_checked();
+void forget_report();   // the city changed: the last report was for somewhere else

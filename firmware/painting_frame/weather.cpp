@@ -14,7 +14,13 @@
 
 // the airport report last used, for the settings page (kept through sleep)
 RTC_DATA_ATTR static char g_report[160] = "";
+RTC_DATA_ATTR static bool g_report_checked = false;   // false until the first check for this city
 const char *last_report() { return g_report; }
+bool report_checked() { return g_report_checked; }
+void forget_report() {
+  g_report[0] = 0;
+  g_report_checked = false;
+}
 
 // Python's round(x, ndigits) rounds half to even; rint() does the same.
 static double pyround(double x, int nd) {
@@ -398,6 +404,7 @@ static void blend(const Place &place, double now, double soon_rain, double soon_
   std::vector<Station> near = stations(place, now);
   int dbz = RADAR_NONE, radar_age = 0;
   bool have_radar = radar_echo(place, now, dbz, radar_age);
+  g_report_checked = true;
   if (near.empty() && !have_radar) {
     LOG.println("[weather] no radar or recent airport report nearby; using the forecast");
     g_report[0] = 0;

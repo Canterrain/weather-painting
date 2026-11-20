@@ -169,7 +169,9 @@ async function refresh() {
   $("location").value = $("location").value || state.location;
   $("report").textContent = state.report
     ? "Rain, snow, thunder, and fog are checked against weather radar and nearby airports' reports. Last check: " + state.report + "."
-    : "No radar or airport reports nearby, so the forecast alone decides whether it's raining or snowing right now.";
+    : state.reportChecked
+    ? "No radar or airport reports nearby, so the forecast alone decides whether it's raining or snowing right now."
+    : "Not checked yet. At its next update, the frame checks weather radar and nearby airports' reports for rain, snow, thunder, and fog.";
   $("autoUpdate").checked = state.autoUpdate;
   $("fwVersion").textContent = "This frame has version " + state.version + ".";
   $("canvasSize").textContent = state.canvas[0] + "×" + state.canvas[1];
