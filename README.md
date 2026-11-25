@@ -26,10 +26,9 @@ E-paper only uses power while it changes, so the frame sleeps between checks and
 ## 🛠 Hardware
 
 - A Seeed Studio reTerminal E1004, from [Amazon](https://link.amazon/B09WHcVBu) or [Seeed Studio](https://seeedtechnologycoltd.sjv.io/YVa1rB) (affiliate links)
-- A microSD card, any size, formatted as FAT32
-- A USB-C data cable and a computer for the first installation
+- A USB-C **data** cable and a computer for the first installation. The cable that comes with the frame may only charge; if the computer doesn't see the frame, use a cable that carries data.
 
-Nothing else is needed. The frame does all the work itself; no Raspberry Pi or computer stays running.
+The frame comes with a microSD card already in it, which holds the painting. Nothing else is needed. The frame does all the work itself; no Raspberry Pi or computer stays running.
 
 ## 🚀 Quick Start
 
@@ -37,11 +36,10 @@ Nothing else is needed. The frame does all the work itself; no Raspberry Pi or c
 
 Use Chrome, Edge, or a Firefox version with Web Serial support on a desktop or laptop. Safari and mobile browsers aren't supported by this installer.
 
-1. Put the microSD card in the frame.
-2. Plug the frame into your computer with a USB **data** cable.
-3. Open the **[Weather Painting installer](https://canterrain.github.io/weather-painting/)**.
-4. Click **Connect**, choose your frame, and select **Install**.
-5. For a first installation, select **Erase device**. Wait for installation to finish and the frame to restart.
+1. Plug the frame into your computer with a USB **data** cable.
+2. Open the **[Weather Painting installer](https://canterrain.github.io/weather-painting/)**.
+3. Click **Connect**, choose your frame, and select **Install**.
+4. For a first installation, select **Erase device**. Wait for installation to finish and the frame to restart.
 
 You don't need Arduino IDE to use the browser installer. If you'd rather build it yourself, see the [build guide](guides/development.md).
 
