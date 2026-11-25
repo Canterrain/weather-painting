@@ -2,6 +2,8 @@
 
 [![Weather Painting on the wall: a winter tree with snow falling. Click to watch the video on YouTube.](.github/weather-painting.jpg)](https://www.youtube.com/watch?v=FTaOydk8VpE)
 
+*Click the image above to see more about this project on YouTube.*
+
 A watercolor painting that changes with the weather outside your window.
 
 The painting is always the same tree on the same hill. When it snows where you live, snow falls in the painting and settles on the branches. Rain brings raindrops and puddles. The tree changes with the seasons, and at night the real moon rises in its real phase.
